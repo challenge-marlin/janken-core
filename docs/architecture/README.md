@@ -21,11 +21,11 @@
               └──────────────┼──────────────┘
                              │
 ┌─────────────────────────────┴─────────────────────────────┐
-│                    AWS Cloud                             │
+│                   Docker Environment                     │
 ├───────────────────────────────────────────────────────────┤
-│  API Gateway                                              │
+│  Load Balancer (Nginx)                                   │
 │      ↓                                                    │
-│  Lambda Functions (Python)                               │
+│  FastAPI Application (Python)                            │
 │  ├── Auth Service                                        │
 │  ├── Game Service                                        │
 │  ├── Ranking Service                                     │
@@ -33,23 +33,23 @@
 │  └── Real-time Service (WebSocket)                       │
 │      ↓                                                    │
 │  Data Layer                                               │
-│  ├── DynamoDB (Primary Database)                         │
-│  ├── ElastiCache (Caching)                              │
-│  └── CloudWatch (Monitoring)                            │
+│  ├── PostgreSQL (Primary Database)                       │
+│  ├── Redis (Caching)                                    │
+│  └── Monitoring & Logging                               │
 └───────────────────────────────────────────────────────────┘
 ```
 
 ## アーキテクチャ原則
 
-### 1. サーバーレス・ファースト
-- AWS Lambda を中心としたサーバーレス構成
-- コスト効率と自動スケーリングを実現
-- 運用負荷の最小化
+### 1. コンテナ・ファースト
+- Docker を中心としたコンテナ化構成
+- 環境の一貫性と移植性を実現
+- 運用の簡素化とスケーラビリティ
 
-### 2. マイクロサービス アーキテクチャ
-- 機能別にLambda関数を分離
+### 2. モジュラー アーキテクチャ
+- 機能別にサービスを分離
 - 疎結合な設計で保守性向上
-- 独立したデプロイとスケーリング
+- 独立したテストとデプロイ
 
 ### 3. リアルタイム対応
 - WebSocket APIによるリアルタイム通信
@@ -99,13 +99,13 @@ admin-app/
 
 ### バックエンド
 
-#### API Gateway
+#### FastAPI Application
 - RESTful API エンドポイント
 - WebSocket API (リアルタイム通信)
 - 認証・認可
-- レート制限
+- 自動ドキュメント生成
 
-#### Lambda Functions
+#### Service Modules
 
 ##### Auth Service
 ```python

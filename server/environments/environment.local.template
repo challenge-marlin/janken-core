@@ -1,0 +1,51 @@
+# ローカル開発環境用環境変数設定
+
+# アプリケーション基本設定
+APP_NAME=Kaminote Janken API
+APP_VERSION=1.0.0
+DEBUG=true
+ENVIRONMENT=development
+
+# データベース設定
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=password
+DB_NAME=kaminote_janken
+DB_ECHO=true
+
+# Redis設定
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
+
+# MinIO設定（別サーバー）
+MINIO_ENDPOINT=192.168.100.10:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_SECURE=false
+MINIO_BUCKET=kaminote-janken
+
+# JWT設定
+JWT_SECRET_KEY=development-secret-key-change-in-production
+JWT_ALGORITHM=HS256
+JWT_EXPIRE_MINUTES=1440
+
+# API設定
+API_TITLE=Kaminote Janken API
+API_DESCRIPTION=じゃんけんゲームAPI - 画面単位API分離原則
+API_VERSION=1.0.0
+
+# CORS設定
+CORS_ORIGINS=["*"]
+CORS_METHODS=["GET", "POST", "PUT", "DELETE"]
+CORS_HEADERS=["*"]
+
+# OCR設定
+OCR_ENABLED=true
+TESSERACT_PATH=/usr/bin/tesseract
+
+# ログ設定
+LOG_LEVEL=DEBUG
+LOG_FORMAT=json 

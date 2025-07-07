@@ -1,0 +1,133 @@
+
+
+services:
+  # バックエンドAPIサーバー
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kaminote-janken-api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=password
+      - DB_NAME=kaminote_janken
+      - DB_ECHO=true
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+      - MINIO_ENDPOINT=192.168.100.10:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_SECURE=false
+      - MINIO_BUCKET=kaminote-janken
+      - JWT_SECRET_KEY=development-secret-key-change-in-production
+      - JWT_ALGORITHM=HS256
+      - JWT_EXPIRE_MINUTES=1440
+      - OCR_ENABLED=true
+      - LOG_LEVEL=DEBUG
+      - CORS_ORIGINS=["*"]
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - kaminote-network
+    restart: unless-stopped
+
+  # Nginx リバースプロキシ
+  nginx:
+    image: nginx:alpine
+    container_name: kaminote-janken-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./monitoring-html:/usr/share/nginx/html
+    depends_on:
+      - api
+    networks:
+      - kaminote-network
+    restart: unless-stopped
+
+  # MySQL データベース
+  mysql:
+    image: mysql:8.0
+    container_name: kaminote-janken-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=kaminote_janken
+      - MYSQL_USER=app_user
+      - MYSQL_PASSWORD=app_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/sql:/docker-entrypoint-initdb.d
+    networks:
+      - kaminote-network
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+
+  # Redis キャッシュ
+  redis:
+    image: redis:6.2-alpine
+    container_name: kaminote-janken-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - kaminote-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # phpMyAdmin (開発用)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: kaminote-janken-phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+      - PMA_USER=root
+      - PMA_PASSWORD=password
+    depends_on:
+      - mysql
+    networks:
+      - kaminote-network
+    restart: unless-stopped
+
+  # Redis Commander (開発用)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: kaminote-janken-redis-commander
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - kaminote-network
+    restart: unless-stopped
+
+networks:
+  kaminote-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local 

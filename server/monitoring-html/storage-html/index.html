@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>かみのてじゃんけん - ストレージ管理</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ストレージ管理</h1>
+            <div class="header-actions">
+                <a href="storage-test.html" class="nav-link">テストページ</a>
+                <a href="/monitor/" class="nav-link">システム監視</a>
+                <div id="lastUpdate">最終更新: --:--:--</div>
+                <button id="refreshButton">更新</button>
+            </div>
+        </header>
+
+        <main>
+            <div class="external-links">
+                <a href="http://192.168.100.10:9000/" target="_blank" class="external-link">MinIO管理画面</a>
+            </div>
+
+            <section class="storage-stats">
+                <div class="stat-card">
+                    <h3>プロフィール画像</h3>
+                    <div class="stat-content">
+                        <div class="stat-item">
+                            <span class="label">総ファイル数:</span>
+                            <span id="profileImagesCount" class="value">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">総容量:</span>
+                            <span id="profileImagesSize" class="value">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <h3>学生証画像</h3>
+                    <div class="stat-content">
+                        <div class="stat-item">
+                            <span class="label">総ファイル数:</span>
+                            <span id="studentIdsCount" class="value">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">総容量:</span>
+                            <span id="studentIdsSize" class="value">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <h3>一時ファイル</h3>
+                    <div class="stat-content">
+                        <div class="stat-item">
+                            <span class="label">総ファイル数:</span>
+                            <span id="tempUploadsCount" class="value">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">総容量:</span>
+                            <span id="tempUploadsSize" class="value">-</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="file-management">
+                <div class="bucket-selector">
+                    <label for="bucketSelect">バケット選択:</label>
+                    <select id="bucketSelect">
+                        <option value="profile-images">プロフィール画像</option>
+                        <option value="student-ids">学生証画像</option>
+                        <option value="temp-uploads">一時ファイル</option>
+                    </select>
+                </div>
+
+                <div class="file-list">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ファイル名</th>
+                                <th>サイズ</th>
+                                <th>最終更新</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fileList">
+                            <!-- ファイル一覧がここに動的に追加されます -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="filemanager.js"></script>
+</body>
+</html>

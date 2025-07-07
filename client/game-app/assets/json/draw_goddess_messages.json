@@ -1,0 +1,254 @@
+{
+  "messages": [
+    {
+      "id": 1,
+      "expression": "draw_smile_relaxed.png",
+      "line": "あいこかぁ…でも落ち着いていこうね♪"
+    },
+    {
+      "id": 2,
+      "expression": "draw_smile_relaxed.png",
+      "line": "うんうん、いい流れだよ！"
+    },
+    {
+      "id": 3,
+      "expression": "draw_smile_relaxed.png",
+      "line": "焦らなくて大丈夫、次で決めよう！"
+    },
+    {
+      "id": 4,
+      "expression": "draw_smile_relaxed.png",
+      "line": "大丈夫、君ならできる！"
+    },
+    {
+      "id": 5,
+      "expression": "draw_smile_relaxed.png",
+      "line": "まだまだこれからだよ、一緒にがんばろう！"
+    },
+    {
+      "id": 6,
+      "expression": "draw_smile_relaxed.png",
+      "line": "ふふ、いいリズムじゃない？"
+    },
+    {
+      "id": 7,
+      "expression": "draw_smile_relaxed.png",
+      "line": "あいこもまた、いい勝負の証だね♪"
+    },
+    {
+      "id": 8,
+      "expression": "draw_smile_relaxed.png",
+      "line": "ゆっくりいこう、次に勝てばいいんだから！"
+    },
+    {
+      "id": 9,
+      "expression": "draw_smile_relaxed.png",
+      "line": "次、どんな手を出すかワクワクするね！"
+    },
+    {
+      "id": 10,
+      "expression": "draw_smile_relaxed.png",
+      "line": "君らしく、楽しくいこうね♪"
+    },
+    {
+      "id": 11,
+      "expression": "draw_wink_playful.png",
+      "line": "おっ、あいこ！次は勝っちゃおう！"
+    },
+    {
+      "id": 12,
+      "expression": "draw_wink_playful.png",
+      "line": "ここで止まってる場合じゃないよね♪"
+    },
+    {
+      "id": 13,
+      "expression": "draw_wink_playful.png",
+      "line": "ふふ、君ならきっと次できめられる！"
+    },
+    {
+      "id": 14,
+      "expression": "draw_wink_playful.png",
+      "line": "あいこでも気を緩めないのがカッコいいところ！"
+    },
+    {
+      "id": 15,
+      "expression": "draw_wink_playful.png",
+      "line": "さぁ、次いこ！今度こそ勝利をつかもう！"
+    },
+    {
+      "id": 16,
+      "expression": "draw_wink_playful.png",
+      "line": "よーし、ここからが本番だねっ！"
+    },
+    {
+      "id": 17,
+      "expression": "draw_wink_playful.png",
+      "line": "次はどんな作戦でいく？私は信じてるよ！"
+    },
+    {
+      "id": 18,
+      "expression": "draw_wink_playful.png",
+      "line": "油断しちゃだめだよ？でも楽しんでね♪"
+    },
+    {
+      "id": 19,
+      "expression": "draw_wink_playful.png",
+      "line": "君のじゃんけん、まだまだこれからだもん！"
+    },
+    {
+      "id": 20,
+      "expression": "draw_wink_playful.png",
+      "line": "次で決めよう！一緒にがんばろう！"
+    },
+    {
+      "id": 21,
+      "expression": "draw_eyes_closed_smile.png",
+      "line": "あいこか…うんうん、落ち着いてね♪"
+    },
+    {
+      "id": 22,
+      "expression": "draw_eyes_closed_smile.png",
+      "line": "どんな時でも私は君の味方だよ。"
+    },
+    {
+      "id": 23,
+      "expression": "draw_eyes_closed_smile.png",
+      "line": "悔しがらなくても大丈夫、まだチャンスはある！"
+    },
+    {
+      "id": 24,
+      "expression": "draw_eyes_closed_smile.png",
+      "line": "焦らずいこう、次があるよ♪"
+    },
+    {
+      "id": 25,
+      "expression": "draw_eyes_closed_smile.png",
+      "line": "君はすごく頑張ってるよ、それだけで素敵だよ♪"
+    },
+    {
+      "id": 26,
+      "expression": "draw_eyes_closed_smile.png",
+      "line": "大丈夫、今までの君の戦い、ちゃんと見てるよ。"
+    },
+    {
+      "id": 27,
+      "expression": "draw_eyes_closed_smile.png",
+      "line": "負けじゃないもん、あいこだもん♪"
+    },
+    {
+      "id": 28,
+      "expression": "draw_eyes_closed_smile.png",
+      "line": "次はどういこうか、一緒に考えようね♪"
+    },
+    {
+      "id": 29,
+      "expression": "draw_eyes_closed_smile.png",
+      "line": "一歩ずつ、一緒に進もう！"
+    },
+    {
+      "id": 30,
+      "expression": "draw_eyes_closed_smile.png",
+      "line": "ゆっくりでいいんだよ、君らしくね。"
+    },
+    {
+      "id": 31,
+      "expression": "draw_pout_cheeks_inflated.png",
+      "line": "むぅ～、決着つかないのはちょっと悔しいねっ！"
+    },
+    {
+      "id": 32,
+      "expression": "draw_pout_cheeks_inflated.png",
+      "line": "もぉ～、あいこなんてズルいよね！"
+    },
+    {
+      "id": 33,
+      "expression": "draw_pout_cheeks_inflated.png",
+      "line": "こんなに頑張ってるのにーっ！"
+    },
+    {
+      "id": 34,
+      "expression": "draw_pout_cheeks_inflated.png",
+      "line": "次はビシッと決めちゃおうね！"
+    },
+    {
+      "id": 35,
+      "expression": "draw_pout_cheeks_inflated.png",
+      "line": "むーん…でも諦めない！"
+    },
+    {
+      "id": 36,
+      "expression": "draw_pout_cheeks_inflated.png",
+      "line": "ふんっ、まだまだこれから！"
+    },
+    {
+      "id": 37,
+      "expression": "draw_pout_cheeks_inflated.png",
+      "line": "ここで止まらないのが君らしい！"
+    },
+    {
+      "id": 38,
+      "expression": "draw_pout_cheeks_inflated.png",
+      "line": "あいこなんて吹き飛ばしちゃえー！"
+    },
+    {
+      "id": 39,
+      "expression": "draw_pout_cheeks_inflated.png",
+      "line": "くぅ～！でも君なら絶対勝てるって信じてる！"
+    },
+    {
+      "id": 40,
+      "expression": "draw_pout_cheeks_inflated.png",
+      "line": "次、絶対決めようねっ！"
+    },
+    {
+      "id": 41,
+      "expression": "draw_blank_face.png",
+      "line": "えっ…またあいこ？うそー！？"
+    },
+    {
+      "id": 42,
+      "expression": "draw_blank_face.png",
+      "line": "ぽかーん…決まらなかった…！"
+    },
+    {
+      "id": 43,
+      "expression": "draw_blank_face.png",
+      "line": "ちょっとびっくりしちゃった…"
+    },
+    {
+      "id": 44,
+      "expression": "draw_blank_face.png",
+      "line": "ええー、また？すごい接戦だね！"
+    },
+    {
+      "id": 45,
+      "expression": "draw_blank_face.png",
+      "line": "これは長期戦の予感…！"
+    },
+    {
+      "id": 46,
+      "expression": "draw_blank_face.png",
+      "line": "さすがにそろそろ決めたいね♪"
+    },
+    {
+      "id": 47,
+      "expression": "draw_blank_face.png",
+      "line": "あいこ、何回目だっけ？（笑）"
+    },
+    {
+      "id": 48,
+      "expression": "draw_blank_face.png",
+      "line": "でも大丈夫、君ならきっと次は勝てるよ♪"
+    },
+    {
+      "id": 49,
+      "expression": "draw_blank_face.png",
+      "line": "ちょっと休憩する？…いや、もう一回いこう！"
+    },
+    {
+      "id": 50,
+      "expression": "draw_blank_face.png",
+      "line": "うーん…決まらない！でも、面白くなってきたね！"
+    }
+  ]
+}

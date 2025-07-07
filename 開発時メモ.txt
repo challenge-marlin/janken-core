@@ -1,0 +1,21 @@
+モノレポ構成で、
+SERVER側はFastAPIを将来AWSへ移行すべく現在ローカル実行。
+クライアント側はFlutterである。
+
+
+
+
+サーバー操作時
+
+cd .\server\
+docker-compose up -d
+
+
+
+
+クライアント操作
+
+
+
+
+

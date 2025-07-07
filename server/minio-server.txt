@@ -1,0 +1,97 @@
+
+MinIOへの接続
+
+from minio import Minio
+
+minio_client = Minio(
+    endpoint="localhost:9000",
+    access_key="minioadmin",
+    secret_key="minioadmin",
+    secure=False
+)
+
+
+
+
+
+
+
+ID
+user
+Pass
+userpass
+
+servername
+minio-server
+
+
+IP
+192.168.100.10
+
+SSH
+ssh user@192.168.100.10
+
+
+ファイルはSCPでやりましょう。
+scp C:\works\forSSH\minio user@192.168.100.10:/home/user/
+
+http://192.168.100.10:9000
+http://192.168.100.10:9001
+ユーザー名：minioadmin
+
+パスワード：minioadmin
+
+
+良いですね！シンプルで実務的な「MinIOエンドポイント案内資料」、すぐ作ります。
+
+以下、Markdownベースで整形するので、メモやドキュメントにコピペできます。
+
+---
+
+# 🚀 **MinIO サーバー接続情報**
+
+## ✅ エンドポイント情報
+
+| サービス              | アドレス例                        | 説明                    |
+| ----------------- | ---------------------------- | --------------------- |
+| **MinIO API**     | `http://192.168.100.10:9000` | S3互換 REST API エンドポイント |
+| **MinIO Console** | `http://192.168.100.10:9001` | 管理ダッシュボード（GUI）        |
+
+※ `192.168.100.10` はローカル環境時、VMの内部IP。VPSに移行した時点のIPは環境により異なるので適宜確認してください。
+
+---
+
+## ✅ 認証情報（初期設定）
+
+| 項目       | 内容           |
+| -------- | ------------ |
+| 管理者ユーザー名 | `minioadmin` |
+| パスワード    | `minioadmin` |
+
+必要なら `/etc/systemd/system/minio.service` 内の環境変数で変更可能。
+
+---
+
+## ✅ 動作確認コマンド例
+
+```bash
+curl -u minioadmin:minioadmin http://192.168.100.10:9000/minio/health/live
+```
+
+正常応答：
+
+```plaintext
+OK
+```
+
+---
+
+## ✅ 備考
+
+* MinIOはAmazon S3と完全互換のAPI仕様です
+* 開発、ローカル検証、ファイルサーバー用途に活用できます
+* 外部ネットワーク公開しない場合は内部ネットワーク運用推奨
+
+---
+
+

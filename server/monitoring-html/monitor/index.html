@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>かみのてじゃんけん - システム監視</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>システム監視ダッシュボード</h1>
+            <div class="header-actions">
+                <a href="/storage-html/" class="nav-link">ストレージ管理</a>
+                <a href="http://192.168.100.10:9000/" target="_blank" class="nav-link">MinIO管理画面</a>
+                <div id="lastUpdate">最終更新: --:--:--</div>
+                <button id="refreshButton">更新</button>
+            </div>
+        </header>
+
+        <main>
+            <section class="status-cards">
+                <div class="card" id="nginxStatus">
+                    <h3>Nginx</h3>
+                    <div class="status">確認中...</div>
+                </div>
+                <div class="card" id="apiStatus">
+                    <h3>API Server</h3>
+                    <div class="status">確認中...</div>
+                </div>
+                <div class="card" id="mysqlStatus">
+                    <h3>MySQL</h3>
+                    <div class="status">確認中...</div>
+                </div>
+                <div class="card" id="redisStatus">
+                    <h3>Redis</h3>
+                    <div class="status">確認中...</div>
+                </div>
+            </section>
+
+            <section class="metrics">
+                <h2>システムメトリクス</h2>
+                <div class="metric-grid">
+                    <div class="metric" id="activeUsers">
+                        <h4>アクティブユーザー</h4>
+                        <div class="value">-</div>
+                    </div>
+                    <div class="metric" id="activeBattles">
+                        <h4>進行中の対戦</h4>
+                        <div class="value">-</div>
+                    </div>
+                    <div class="metric" id="apiLatency">
+                        <h4>API レイテンシー</h4>
+                        <div class="value">-</div>
+                    </div>
+                    <div class="metric" id="errorRate">
+                        <h4>エラー率</h4>
+                        <div class="value">-</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="metrics.js?v=2"></script>
+</body>
+</html>
