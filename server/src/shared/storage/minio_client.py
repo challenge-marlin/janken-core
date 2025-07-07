@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from minio import Minio
 from minio.error import S3Error
 
-from ...config.settings import settings
+from ...shared.config.settings import settings
 from ...shared.exceptions.handlers import ExternalServiceError
 
 

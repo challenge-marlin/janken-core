@@ -14,7 +14,7 @@ import logging
 # ログレベルを設定
 logging.basicConfig(level=logging.DEBUG)
 
-from .config.settings import settings
+from .shared.config.settings import settings
 from .screens.auth.router import router as auth_router
 from .shared.exceptions.handlers import BaseApplicationError
 from .infrastructure.monitoring.health import health_checker

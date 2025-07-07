@@ -8,7 +8,7 @@ import asyncio
 from typing import Dict, Any
 from datetime import datetime
 
-from ...config.settings import settings
+from ...shared.config.settings import settings
 
 
 class HealthChecker:

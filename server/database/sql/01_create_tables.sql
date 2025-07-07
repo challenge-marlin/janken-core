@@ -1,6 +1,6 @@
 -- データベース作成
-CREATE DATABASE IF NOT EXISTS kaminote_janken;
-USE kaminote_janken;
+CREATE DATABASE IF NOT EXISTS janken_db;
+USE janken_db;
 
 -- admin_logs（管理者オペレーションログ）
 CREATE TABLE IF NOT EXISTS admin_logs (
@@ -113,6 +113,78 @@ CREATE TABLE IF NOT EXISTS user_stats (
     last_reset_at DATE NOT NULL,
     PRIMARY KEY (management_code),
     FOREIGN KEY (management_code) REFERENCES users(management_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- magic_links テーブル
+-- Magic Link認証用トークン管理
+-- メール認証によるパスワードレスログインを実現
+-- 2024-06 現在：アクティブに使用中
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS magic_links (
+    token_id VARCHAR(128) PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    token_hash VARCHAR(512) NOT NULL,
+    user_id VARCHAR(36),
+    expires_at DATETIME NOT NULL,
+    used_at DATETIME NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    user_agent VARCHAR(255),
+    captcha_token VARCHAR(128),
+    recaptcha_score DECIMAL(3,2),
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_magic_links_email (email),
+    INDEX idx_magic_links_expires (expires_at),
+    INDEX idx_magic_links_used (used_at),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- captcha_challenges テーブル
+-- じゃんけんCAPTCHA + reCAPTCHA管理
+-- Bot対策とセキュリティ強化のため
+-- 2024-06 現在：アクティブに使用中
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS captcha_challenges (
+    challenge_id VARCHAR(128) PRIMARY KEY,
+    challenge_type ENUM('janken', 'recaptcha') NOT NULL,
+    question_data JSON NOT NULL,
+    correct_answer VARCHAR(50) NOT NULL,
+    signature_token VARCHAR(256) NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    solved_at DATETIME NULL,
+    is_solved BOOLEAN NOT NULL DEFAULT FALSE,
+    attempt_count INT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_captcha_expires (expires_at),
+    INDEX idx_captcha_ip (ip_address),
+    INDEX idx_captcha_solved (solved_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- rate_limits テーブル
+-- レート制限管理
+-- IP単位でのリクエスト制限とBot対策
+-- 2024-06 現在：アクティブに使用中
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS rate_limits (
+    limit_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    ip_address VARCHAR(45) NOT NULL,
+    endpoint VARCHAR(100) NOT NULL,
+    request_count INT NOT NULL DEFAULT 1,
+    window_start DATETIME NOT NULL,
+    window_end DATETIME NOT NULL,
+    blocked_until DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_ip_endpoint_window (ip_address, endpoint, window_start),
+    INDEX idx_rate_limits_ip (ip_address),
+    INDEX idx_rate_limits_window (window_end),
+    INDEX idx_rate_limits_blocked (blocked_until)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================

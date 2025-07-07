@@ -7,15 +7,23 @@ SERVER側はFastAPIを将来AWSへ移行すべく現在ローカル実行。
 
 サーバー操作時
 
+
 cd .\server\
+docker-compose build
+docker-compose build api
+
+
+基本的な起動
 docker-compose up -d
 
+http://localhost:8080 
 
 
 
 クライアント操作
+cd .\client\game-app
 
-
+ flutter devices
 
 
 

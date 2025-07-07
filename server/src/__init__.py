@@ -1,6 +1,5 @@
 """
-かみのてじゃんけん - バックエンドAPIサーバー
-画面単位API分離原則による設計
+This package contains the core functionality of the Janken game server.
 """
 
 __version__ = "1.0.0"

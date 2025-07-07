@@ -4,12 +4,12 @@
 SQLAlchemy 2.0 + 非同期処理でMySQL接続を提供
 """
 
-import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
 from ..exceptions.handlers import DatabaseConnectionError
+from ..config.settings import settings
 
 
 class DatabaseConnection:
@@ -23,22 +23,15 @@ class DatabaseConnection:
     def _initialize_connection(self):
         """データベース接続の初期化"""
         try:
-            # 環境変数から接続情報を取得
-            db_host = os.getenv("DB_HOST", "localhost")
-            db_port = os.getenv("DB_PORT", "3306")
-            db_user = os.getenv("DB_USER", "root")
-            db_password = os.getenv("DB_PASSWORD", "password")
-            db_name = os.getenv("DB_NAME", "kaminote_janken")
-            
-            # 非同期MySQL接続文字列
-            database_url = f"mysql+aiomysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+            # settingsから接続情報を取得
+            database_url = settings.database_url
             
             # 非同期エンジンの作成
             self.engine = create_async_engine(
                 database_url,
                 poolclass=NullPool,  # Lambda環境では接続プールを使用しない
                 pool_pre_ping=True,
-                echo=os.getenv("DB_ECHO", "false").lower() == "true",
+                echo=settings.db_echo,
                 future=True
             )
             

@@ -1,3 +1,5 @@
+USE janken_db;
+
 INSERT INTO daily_ranking (ranking_position, user_id, wins, last_win_at, updated_at) VALUES
 (1, 'user032', 50, '2025-05-03 14:59:13', '2025-05-07 07:07:55'),
 (2, 'user030', 50, '2025-04-29 01:56:15', '2025-05-07 07:07:55'),

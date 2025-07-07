@@ -1,3 +1,6 @@
+-- マッチ履歴のサンプルデータ
+USE janken_db;
+
 INSERT INTO match_history (
         fight_no, player1_id, player1_nickname, player2_id, player2_nickname,
         player1_hand, player2_hand, player1_result, player2_result,
