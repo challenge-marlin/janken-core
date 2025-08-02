@@ -24,6 +24,8 @@ http://localhost:8080
 cd .\client\game-app
 
  flutter devices
+flutter run -d 801SH
+
 
 
 

@@ -181,6 +181,63 @@ flutter run -d windows --dart-define=ENV=production
 
 詳細は `client/game-app/lib/config/README.md` を参照してください。
 
+## 🔐 認証テスト環境
+
+### 認証テストページ
+
+認証機能のテスト用Webページが用意されています：
+
+#### アクセス方法
+```
+# Docker環境（推奨）
+http://localhost/auth/       # 認証テストページ
+http://localhost/monitor/    # モニタリングページ  
+http://localhost/storage-html/ # ストレージ管理ページ
+
+# 直接アクセス（開発時）
+http://localhost:3000/auth/
+http://localhost:3000/monitor/
+http://localhost:3000/storage-html/
+```
+
+#### 利用可能なテスト機能
+1. **Magic Link認証**: メール認証によるパスワードレスログイン
+2. **開発用認証**: テストユーザー(1-5)での簡易ログイン  
+3. **従来形式認証**: ID/パスワード方式（互換性維持）
+4. **JWT管理**: トークンの表示・検証・管理
+5. **システムモニタリング**: パフォーマンスメトリクス表示
+6. **ストレージ管理**: ファイルアップロード・管理機能
+
+#### Docker環境での起動
+```bash
+# サーバーディレクトリに移動
+cd server
+
+# Docker環境を起動
+docker-compose up -d
+
+# 環境確認
+docker-compose ps
+```
+
+#### 環境別アクセス設定
+- **開発環境（Docker）**: `http://localhost` (Nginx経由)
+- **開発環境（直接）**: `http://localhost:3000` 
+- **VPS環境**: `http://160.251.137.105`
+
+#### トラブルシューティング
+- **接続エラー**: Docker環境が起動しているか確認
+- **404エラー**: Nginx設定とmain-htmlマウントを確認
+- **JavaScript関数エラー**: ブラウザでハードリフレッシュ (Ctrl+Shift+R)
+
+### Docker環境構成
+```
+localhost:80     → Nginx → APIサーバー
+localhost:3000   → APIサーバー（直接）
+localhost:8080   → phpMyAdmin
+localhost:8081   → Redis Commander
+```
+
 ## 📚 ドキュメント
 
 - **API仕様**: `docs/api/`

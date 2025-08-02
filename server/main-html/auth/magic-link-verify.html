@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Link 確認 - じゃんけんゲーム</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .logo {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        .title {
+            color: #333;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            color: #666;
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        .token-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .token-label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 10px;
+        }
+        
+        .token-value {
+            font-family: 'Courier New', monospace;
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            word-break: break-all;
+            font-size: 14px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #155724 100%);
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .instructions {
+            background: #fff3cd;
+            color: #856404;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #ffeaa7;
+            margin: 20px 0;
+        }
+        
+        .step {
+            margin: 10px 0;
+            padding: 10px 0;
+        }
+        
+        .step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 25px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🔗✨</div>
+        
+        <h1 class="title">Magic Link 確認完了</h1>
+        
+        <div class="message">
+            Magic Linkが確認されました。<br>
+            アプリを起動してログインを完了してください。
+        </div>
+        
+        <!-- トークン情報表示 -->
+        <div class="token-info">
+            <div class="token-label">🎫 認証トークン:</div>
+            <div class="token-value" id="tokenValue">読み込み中...</div>
+        </div>
+        
+        <!-- ステータス表示 -->
+        <div id="statusMessage" class="status" style="display: none;"></div>
+        
+        <!-- 実際のフロー説明 -->
+        <div class="instructions">
+            <h3>📱 実際のアプリでの流れ:</h3>
+            <div class="step">
+                <span class="step-number">1</span>
+                メールのリンクをタップ
+            </div>
+            <div class="step">
+                <span class="step-number">2</span>
+                この中継ページが表示される
+            </div>
+            <div class="step">
+                <span class="step-number">3</span>
+                アプリを起動してログイン完了
+            </div>
+        </div>
+        
+        <!-- テスト用ボタン -->
+        <div style="margin-top: 30px;">
+            <button class="btn btn-success" onclick="simulateAppLogin()">
+                📱 アプリでのログインをシミュレート
+            </button>
+            <br>
+            <a href="index.html" class="btn btn-secondary">
+                🔙 認証テストページに戻る
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // URLパラメータからトークンを取得
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        
+        // トークン表示
+        document.getElementById('tokenValue').textContent = token || 'トークンが見つかりません';
+        
+        // ステータス表示関数
+        function showStatus(message, isSuccess = true) {
+            const statusElement = document.getElementById('statusMessage');
+            statusElement.style.display = 'block';
+            statusElement.className = `status ${isSuccess ? 'success' : 'error'}`;
+            statusElement.textContent = message;
+        }
+        
+        // アプリでのログインをシミュレート
+        async function simulateAppLogin() {
+            if (!token) {
+                showStatus('❌ トークンが見つかりません', false);
+                return;
+            }
+            
+            try {
+                showStatus('🔄 ログイン処理中...', true);
+                
+                // API呼び出し（実際のアプリと同じ）
+                const response = await fetch('/api/auth/verify-magic-link', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ token: token })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.token) {
+                    showStatus('✅ ログイン成功！JWTトークンを取得しました。', true);
+                    
+                    // JWTをローカルストレージに保存（実際のアプリと同様）
+                    localStorage.setItem('jwt_token', data.data.token);
+                    localStorage.setItem('magic_link_user', JSON.stringify(data.data.user));
+                    
+                    // 3秒後に認証テストページにリダイレクト
+                    setTimeout(() => {
+                        window.location.href = 'index.html?login_success=true';
+                    }, 3000);
+                } else {
+                    showStatus('❌ ログインに失敗しました: ' + (data.message || 'エラーが発生しました'), false);
+                }
+                
+            } catch (error) {
+                showStatus('❌ 通信エラー: ' + error.message, false);
+            }
+        }
+        
+        // ページ読み込み時の処理
+        document.addEventListener('DOMContentLoaded', function() {
+            if (token) {
+                showStatus('✅ Magic Linkトークンを確認しました', true);
+            } else {
+                showStatus('❌ Magic Linkトークンが見つかりません', false);
+            }
+        });
+    </script>
+</body>
+</html> 

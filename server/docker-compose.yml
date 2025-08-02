@@ -50,7 +50,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./monitoring-html:/usr/share/nginx/html
+      - ./main-html:/usr/share/nginx/html
     depends_on:
       - api
     networks:
@@ -119,6 +119,29 @@ services:
     networks:
       - kaminote-network
     restart: unless-stopped
+
+  # データベースセットアップ用サービス
+  db-setup:
+    build:
+      context: .
+      dockerfile: Dockerfile.db-setup
+    container_name: kaminote-janken-db-setup
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=password
+      - DB_NAME=janken_db
+    volumes:
+      - ./scripts:/app/scripts
+      - ./database/sql:/app/database/sql
+      - ./src:/app/src
+    depends_on:
+      - mysql
+    networks:
+      - kaminote-network
+    profiles:
+      - setup
 
 networks:
   kaminote-network:

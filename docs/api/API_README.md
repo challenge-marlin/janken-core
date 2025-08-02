@@ -2,7 +2,7 @@
 
 ## 概要
 このドキュメントは、じゃんけんゲームアプリケーションのAPI仕様を定義します。
-クライアント（Flutter）とサーバー（Node.js）間の通信インターフェースを明確化し、開発の効率化と品質の向上を図ります。
+クライアント（Flutter）とサーバー（fastAPI）間の通信インターフェースを明確化し、開発の効率化と品質の向上を図ります。
 
 ## API設計方針
 
@@ -27,6 +27,35 @@
 - `/api/lobby/user-stats/{userId}` - ロビー画面専用のユーザーステータス取得
 - `/api/settings/user-profile/{userId}` - 設定画面専用のユーザープロフィール取得
 - `/api/battle/hand` - バトル画面専用の手送信
+
+### WebSocket vs REST API使い分け
+
+本プロジェクトでは、**リアルタイム性が重要な機能はWebSocket**、**一般的なCRUD操作はREST API**を使用します：
+
+#### WebSocket推奨ケース
+- **バトル画面**: マッチング・対戦・結果のリアルタイム通信
+- **チャット機能**: 即座のメッセージ送受信
+- **リアルタイムランキング**: 順位変動の即座の反映
+- **通知システム**: プッシュ通知の即座配信
+
+#### REST API推奨ケース
+- **ロビー画面**: ユーザー情報取得・更新
+- **設定画面**: プロフィール編集・画像アップロード
+- **認証処理**: ログイン・ログアウト・トークン管理
+- **データ取得**: 履歴・統計情報の取得
+
+#### API移行方針
+従来のポーリングベースから効率的なリアルタイム通信への移行：
+
+1. **従来方式（非推奨）**: 
+   ```
+   GET /battle → ポーリング → レスポンス遅延
+   ```
+
+2. **新方式（推奨）**: 
+   ```
+   WebSocket /ws/battle/{userId} → 即座の状態変化通知
+   ```
 
 この方針により、各画面の機能が独立し、保守性と安定性を確保します。
 
@@ -201,8 +230,149 @@ Pragma: no-cache
     }
     ```
 
+## WebSocket API仕様
+
+### 基本情報
+- プロトコル: WebSocket (RFC 6455)
+- エンドポイント: `ws://host/ws/{endpoint}`
+- メッセージ形式: JSON
+- 文字コード: UTF-8
+
+### WebSocket接続仕様
+
+#### 接続URL形式
+```
+ws://160.251.137.105/ws/battle/{userId}
+```
+
+#### 接続ヘッダー
+```http
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Version: 13
+Authorization: Bearer {jwt_token}  # 認証が必要な場合
+```
+
+#### メッセージ形式
+
+##### 送信メッセージ（クライアント → サーバー）
+```json
+{
+  "type": "string",      // メッセージタイプ
+  "data": {              // メッセージデータ
+    // タイプ固有のデータ
+  },
+  "timestamp": "string", // ISO8601形式
+  "messageId": "string"  // UUID（オプション）
+}
+```
+
+##### 受信メッセージ（サーバー → クライアント）
+```json
+{
+  "type": "string",      // メッセージタイプ
+  "data": {              // メッセージデータ
+    // タイプ固有のデータ
+  },
+  "timestamp": "string", // ISO8601形式
+  "success": boolean,    // 処理結果
+  "error": {             // エラー情報（失敗時のみ）
+    "code": "string",
+    "message": "string"
+  }
+}
+```
+
+#### 接続ライフサイクル
+
+1. **接続確立**
+   ```json
+   // サーバーからの接続確認
+   {
+     "type": "connection_established",
+     "data": {
+       "userId": "string",
+       "sessionId": "string"
+     },
+     "timestamp": "2024-01-01T00:00:00Z",
+     "success": true
+   }
+   ```
+
+2. **ハートビート**
+   ```json
+   // クライアントからのping
+   {
+     "type": "ping",
+     "data": {},
+     "timestamp": "2024-01-01T00:00:00Z"
+   }
+   
+   // サーバーからのpong
+   {
+     "type": "pong",
+     "data": {},
+     "timestamp": "2024-01-01T00:00:00Z",
+     "success": true
+   }
+   ```
+
+3. **接続切断**
+   ```json
+   // クライアントからの切断通知
+   {
+     "type": "disconnect",
+     "data": {
+       "reason": "user_action"
+     },
+     "timestamp": "2024-01-01T00:00:00Z"
+   }
+   ```
+
+#### エラーハンドリング
+```json
+{
+  "type": "error",
+  "data": {
+    "originalType": "string",  // エラーの原因となったメッセージタイプ
+    "originalData": {}         // エラーの原因となったメッセージデータ
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "success": false,
+  "error": {
+    "code": "WEBSOCKET_ERROR",
+    "message": "WebSocket通信エラー"
+  }
+}
+```
+
+### バトル画面WebSocket API（画面専用）
+
+バトル画面でのリアルタイム通信に特化したWebSocket API仕様：
+
+#### エンドポイント
+```
+ws://160.251.137.105/ws/battle/{userId}
+```
+
+#### メッセージタイプ一覧
+
+1. **matching_start** - マッチング開始
+2. **matching_status** - マッチング状態更新
+3. **match_found** - マッチング成立
+4. **battle_ready** - 対戦準備完了
+5. **submit_hand** - 手の送信
+6. **battle_result** - 対戦結果
+7. **reset_hands** - 手のリセット
+8. **battle_quit** - 対戦辞退
+
+詳細な仕様は [バトル画面API](battle.md) を参照してください。
+
 ### バトル画面API（画面専用）
 - `GET /battle` - マッチング状態確認（バトル画面専用）
+  
+  **注意**: このAPIはWebSocket接続が利用できない場合の代替手段として提供されます。
+  通常の運用ではWebSocket API (`ws://host/ws/battle/{userId}`) を使用してください。
   - レスポンス:
     ```json
     {
@@ -700,52 +870,232 @@ AWS環境（予定）:
    - SQLインジェクション対策
    - XSS対策
 
-## 注意事項
-- VPS環境ではAPIキー認証は不要
-- AWS環境への移行時は、APIキー認証が必須となります
-- 環境変数や設定ファイルでベースURLを管理することを推奨
-- 本番環境へのデプロイ時は、必ずステージング環境でのテストを実施
+## エラーレスポンス仕様
 
-## ドキュメント構成
+### 1. **認証エラー**
+   ```json
+   {
+     "success": false,
+     "error": {
+       "code": "AUTH_ERROR",
+       "message": "認証に失敗しました",
+       "details": {
+         "reason": "トークンの有効期限切れ",
+         "timestamp": "2024-01-01T00:00:00Z"
+       }
+     }
+   }
+   ```
 
-### 画面単位API分離原則による構成
-各APIドキュメントは対応する画面専用の機能のみを定義し、他画面からの使用は禁止します：
+2. **APIキーエラー**
+   ```json
+   {
+     "success": false,
+     "error": {
+       "code": "API_KEY_ERROR",
+       "message": "無効なAPIキー",
+       "details": {
+         "reason": "APIキーが見つかりません",
+         "timestamp": "2024-01-01T00:00:00Z"
+       }
+     }
+   }
+   ```
 
-- [認証API](auth.md) - ログイン画面専用の認証関連API
-- [登録API](register.md) - 登録画面専用のアカウント作成関連API
-- [ロビー画面API](lobby.md) - ロビー画面専用のユーザー情報・設定関連API
-- [バトル画面API](battle.md) - バトル画面専用のマッチング・対戦・結果関連API
-- [ランキング画面API](ranking.md) - ランキング画面専用のランキング表示関連API
-- [設定画面API](settings.md) - 設定画面専用のプロフィール編集・画像管理関連API
-- [実装状況](status.md) - APIの実装状況と優先度
+## エラーコード一覧
 
-### API分離の利点
-1. **保守性**: 各画面の修正が他画面に影響しない
-2. **安定性**: 画面固有の要件に最適化された専用API
-3. **開発効率**: 画面担当者が独立して開発可能
-4. **テスト容易性**: 画面単位での独立したテスト実行
+### 認証関連
+| コード | HTTPステータス | 説明 |
+|--------|----------------|------|
+| `AUTH_TOKEN_MISSING` | 401 | 認証トークンが不足 |
+| `AUTH_TOKEN_INVALID` | 401 | 認証トークンが無効 |
+| `AUTH_TOKEN_EXPIRED` | 401 | 認証トークンが期限切れ |
+| `AUTH_PERMISSION_DENIED` | 403 | 権限不足 |
 
-## 環境情報
+### バリデーション関連
+| コード | HTTPステータス | 説明 |
+|--------|----------------|------|
+| `VALIDATION_ERROR` | 400 | バリデーションエラー |
+| `REQUIRED_FIELD_MISSING` | 400 | 必須フィールドが不足 |
+| `INVALID_FORMAT` | 400 | 形式が不正 |
+| `VALUE_OUT_OF_RANGE` | 400 | 値が範囲外 |
 
-### エンドポイント情報
+### ビジネスロジック関連
+| コード | HTTPステータス | 説明 |
+|--------|----------------|------|
+| `USER_NOT_FOUND` | 404 | ユーザーが見つからない |
+| `GAME_NOT_FOUND` | 404 | ゲームが見つからない |
+| `BATTLE_NOT_FOUND` | 404 | バトルが見つからない |
+| `INSUFFICIENT_SCORE` | 400 | スコア不足 |
+| `GAME_ALREADY_FINISHED` | 400 | ゲーム既に終了 |
+
+### システム関連
+| コード | HTTPステータス | 説明 |
+|--------|----------------|------|
+| `RATE_LIMIT_EXCEEDED` | 429 | レート制限超過 |
+| `SERVICE_UNAVAILABLE` | 503 | サービス利用不可 |
+| `INTERNAL_SERVER_ERROR` | 500 | サーバー内部エラー |
+
+## レート制限仕様
+
+### 環境別制限
+| 環境 | 制限 | 単位 |
+|------|------|------|
+| 開発環境 | 制限なし | - |
+| VPS環境 | 1000リクエスト | 1分間 |
+| AWS環境 | 2000リクエスト | 1分間 |
+
+### エンドポイント別制限
+| エンドポイント | 制限 | 単位 |
+|----------------|------|------|
+| `/api/auth/request-link` | 5リクエスト | 5分間 |
+| `/api/battle/*` | 100リクエスト | 1分間 |
+| `/api/ranking/*` | 60リクエスト | 1分間 |
+| `/api/lobby/*` | 200リクエスト | 1分間 |
+| `/api/settings/*` | 50リクエスト | 1分間 |
+
+## セキュリティ仕様
+
+### HTTPS通信
+- 全環境でHTTPS通信を必須とする
+- 開発環境ではHTTPも許可（localhost）
+
+### CORS設定
+```javascript
+// 許可するオリジン
+const allowedOrigins = [
+  'http://localhost:3000',  // 開発環境
+  'http://160.251.137.105', // VPS環境
+  'https://app.janken-game.com',  // 本番環境
+  'https://admin.janken-game.com'  // 管理画面
+];
 ```
-VPS環境（本番）:
-- ベースURL: http://160.251.137.105/
 
-開発環境（ローカル）:
-- ベースURL: http://192.168.1.180:3000/dev/api
+### データ暗号化
+- 個人情報は暗号化して保存
+- パスワードはbcryptでハッシュ化
+- Magic Linkトークンは署名付き
 
-AWS環境（予定）:
-- ベースURL: https://avwnok61nj.execute-api.ap-northeast-3.amazonaws.com/proc
+## 監視・ログ仕様
+
+### ログレベル
+| レベル | 説明 | 保存期間 |
+|--------|------|----------|
+| ERROR | エラー情報 | 90日 |
+| WARN | 警告情報 | 30日 |
+| INFO | 一般情報 | 7日 |
+| DEBUG | デバッグ情報 | 1日 |
+
+### システムメトリクス
+- API応答時間
+- エラー率
+- リクエスト数
+- アクティブユーザー数
+- WebSocket接続数
+- バトル同時実行数
+
+## 開発者向け情報
+
+### 開発環境セットアップ
+```bash
+# サーバー起動
+cd server
+pip install -r requirements.txt
+uvicorn src.main:app --reload --host 0.0.0.0 --port 3000
+
+# クライアント起動
+cd client/game-app
+flutter run
 ```
 
-### リージョン情報
-```
-リージョン: ap-northeast-3 (大阪)
+### API テスト例
+```bash
+# ヘルスチェック
+curl http://160.251.137.105/api/health
+
+# 開発用認証
+curl -X POST http://160.251.137.105/api/auth/dev-login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "dev@example.com", "mode": "dev"}'
+
+# WebSocket接続テスト
+wscat -c ws://160.251.137.105/ws/battle/user123
 ```
 
-### 注意事項
-- AWS環境への移行時は、API Gatewayのステージ名（proc）は環境によって異なる可能性があります
-- リージョンは必要に応じて変更される可能性があります
-- エンドポイントは環境変数や設定ファイルで管理することを推奨します
-- 本番環境へのデプロイ時は、必ずステージング環境でのテストを実施してください 
+### 環境変数
+```bash
+# 必須環境変数
+export ENVIRONMENT=development
+export JWT_SECRET_KEY=your-secret-key
+export DB_HOST=localhost
+export DB_NAME=janken_game
+export REDIS_HOST=localhost
+export MINIO_ENDPOINT=localhost:9000
+```
+
+## インフラ系API
+
+### システム監視エンドポイント
+| エンドポイント | メソッド | 説明 | 認証 |
+|----------------|----------|------|------|
+| `/api/health` | GET | 基本ヘルスチェック | 不要 |
+| `/api/health/detailed` | GET | 詳細ヘルスチェック | 不要 |
+| `/api/metrics` | GET | システムメトリクス | 不要 |
+| `/api/status` | GET | サービス状態 | 不要 |
+
+### 管理者専用API
+| エンドポイント | メソッド | 説明 | 認証 |
+|----------------|----------|------|------|
+| `/api/admin/users` | GET | ユーザー一覧 | 管理者 |
+| `/api/admin/ban-user` | POST | ユーザーBAN | 管理者 |
+| `/api/admin/system-stats` | GET | システム統計 | 管理者 |
+
+#### ユーザーBAN例
+```http
+POST /api/admin/ban-user
+Authorization: Bearer <admin_jwt_token>
+Content-Type: application/json
+
+{
+  "user_id": "user123",
+  "reason": "不正行為",
+  "duration_days": 7
+}
+```
+
+**レスポンス**
+```json
+{
+  "success": true,
+  "message": "ユーザーをBANしました",
+  "ban_info": {
+    "user_id": "user123",
+    "banned_until": "2024-07-01T00:00:00Z",
+    "reason": "不正行為"
+  }
+}
+```
+
+## 今後の実装予定
+
+### 1. 認証機能拡張
+- ソーシャルログイン（Google, Apple）
+- 多要素認証（SMS, TOTP）
+- デバイス管理
+
+### 2. ゲーム機能拡張
+- リアルタイム対戦（WebSocket実装完了）
+- トーナメント機能
+- ギルド機能
+- フレンド機能
+
+### 3. 管理機能拡張
+- 詳細な統計ダッシュボード
+- 自動BAN機能
+- 不正検知システム
+
+### 4. パフォーマンス向上
+- CDN導入
+- キャッシュ最適化
+- データベースクエリ最適化
+- WebSocket接続プーリング 

@@ -1,406 +1,694 @@
-# バトル画面API
+# バトル画面WebSocket API
 
-バトル画面（マッチング〜対戦〜結果）で使用する専用APIを定義します。他画面での使用は禁止します。
+バトル画面（マッチング〜対戦〜結果）で使用する専用WebSocket APIを定義します。他画面での使用は禁止します。
 
 ## 基本方針
+- **リアルタイム通信**: WebSocketによる即座の状態変化通知
 - **画面特化**: バトル画面のマッチング・対戦・結果表示に最適化
 - **独立性**: 他画面のAPIに依存しない
 - **完全性**: バトル画面で必要な全ての機能を提供
 
-## 1. マッチング開始
+## WebSocket接続
 
 ### エンドポイント
 ```
-POST /battle
+ws://160.251.137.105/ws/battle/{userId}
 ```
 
-### 用途
-- バトル画面でのマッチング開始
-- 対戦相手の自動検索
-- マッチング状態の初期化
+### 接続パラメータ
+- `userId`: ユーザーID（URLパス）
+- `Authorization`: Bearer {jwt_token}（ヘッダー、認証が必要な場合）
 
-### リクエスト
+### 接続確立
 ```json
+// サーバーからの接続確認メッセージ
 {
-  "userId": "string"
+  "type": "connection_established",
+  "data": {
+    "userId": "string",
+    "sessionId": "string",
+    "status": "connected"
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "success": true
 }
 ```
 
-### レスポンス（成功時）
+## メッセージ仕様
+
+### 1. マッチング開始
+
+#### クライアント → サーバー
 ```json
 {
-  "success": true,
+  "type": "matching_start",
   "data": {
-    "message": "マッチングを開始しました",
+    "userId": "string"
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "messageId": "uuid"
+}
+```
+
+#### サーバー → クライアント（成功時）
+```json
+{
+  "type": "matching_started",
+  "data": {
     "matchingId": "string",
-    "status": "waiting"
-  }
+    "status": "waiting",
+    "message": "マッチングを開始しました"
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "success": true
 }
 ```
 
-## 2. マッチング状態確認
+### 2. マッチング状態更新（自動通知）
 
-### エンドポイント
-```
-GET /battle
-```
-
-### 用途
-- バトル画面でのマッチング状態監視
-- 対戦相手情報の取得
-- 対戦準備状態の確認
-- 結果判定状態の確認
-
-### リクエストパラメータ
-- userId: ユーザーID（クエリパラメータ）
-- matchingId: マッチングID（クエリパラメータ、任意）
-
-### レスポンス（成功時）
+#### サーバー → クライアント
 ```json
 {
-  "success": true,
+  "type": "matching_status",
   "data": {
-    "id": "string",
-    "player1_id": "string",
-    "player2_id": "string",
-    "status": "string",
-    "player1_ready": boolean,
-    "player2_ready": boolean,
-    "player1_hand": "string",
-    "player2_hand": "string",
-    "draw_count": number,
-    "result": {
-      "player1_result": "string",
-      "player2_result": "string",
-      "winner": number,
-      "is_draw": boolean,
-      "judged": boolean,
-      "is_finished": boolean
-    }
-  }
+    "matchingId": "string",
+    "status": "waiting",
+    "queuePosition": 3,
+    "estimatedWaitTime": 30
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "success": true
 }
 ```
 
-### ステータス値
-- `waiting`: マッチング待機中
-- `matched`: マッチング成立（準備待ち）
-- `ready`: 対戦準備完了
-- `draw`: 引き分け状態
-- `finished`: 対戦終了
-- `cancelled`: キャンセル
+### 3. マッチング成立
 
-## 3. 対戦準備完了
-
-### エンドポイント
-```
-POST /battle/ready
-```
-
-### 用途
-- バトル画面での準備完了通知
-- 両プレイヤー準備状態の管理
-- 対戦開始の同期
-
-### リクエスト
+#### サーバー → クライアント
 ```json
 {
-  "userId": "string",
-  "matchingId": "string"
-}
-```
-
-### レスポンス（成功時）
-```json
-{
-  "success": true,
+  "type": "match_found",
   "data": {
-    "id": "string",
-    "status": "string",
-    "player1_ready": boolean,
-    "player2_ready": boolean,
-    "message": "string"
-  }
+    "matchingId": "string",
+    "battleId": "string",
+    "opponent": {
+      "userId": "string",
+      "nickname": "string",
+      "profileImageUrl": "string"
+    },
+    "playerNumber": 1,
+    "status": "matched",
+    "message": "対戦相手が見つかりました"
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "success": true
 }
 ```
 
-## 4. 手の送信
+### 4. 対戦準備完了
 
-### エンドポイント
-```
-POST /battle/hand
-```
-
-### 用途
-- バトル画面での手（グー・チョキ・パー）送信
-- 対戦手の記録
-- 手出し完了状態の管理
-
-### リクエスト
+#### クライアント → サーバー
 ```json
 {
-  "userId": "string",
-  "matchingId": "string",
-  "hand": "string"
+  "type": "battle_ready",
+  "data": {
+    "battleId": "string",
+    "userId": "string"
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "messageId": "uuid"
 }
 ```
 
-### 手の値
+#### サーバー → クライアント（準備状態更新）
+```json
+{
+  "type": "battle_ready_status",
+  "data": {
+    "battleId": "string",
+    "player1Ready": true,
+    "player2Ready": false,
+    "status": "preparing",
+    "message": "対戦準備中..."
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "success": true
+}
+```
+
+#### サーバー → クライアント（両者準備完了時）
+```json
+{
+  "type": "battle_start",
+  "data": {
+    "battleId": "string",
+    "status": "ready",
+    "countdown": 3,
+    "message": "対戦開始！手を選択してください"
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "success": true
+}
+```
+
+### 5. 手の送信
+
+#### クライアント → サーバー
+```json
+{
+  "type": "submit_hand",
+  "data": {
+    "battleId": "string",
+    "userId": "string",
+    "hand": "rock"
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "messageId": "uuid"
+}
+```
+
+#### 手の値
 - `"rock"`: グー
 - `"scissors"`: チョキ
 - `"paper"`: パー
 
-### レスポンス（成功時）
+#### サーバー → クライアント（手送信確認）
 ```json
 {
-  "success": true,
+  "type": "hand_submitted",
   "data": {
+    "battleId": "string",
+    "status": "hand_submitted",
     "message": "手を送信しました",
-    "status": "string"
-  }
+    "waitingForOpponent": true
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "success": true
 }
 ```
 
-## 5. 結果判定
+### 6. 対戦結果（自動判定）
 
-### エンドポイント
-```
-POST /battle/judge
-```
-
-### 用途
-- バトル画面での結果判定実行
-- 勝敗・引き分けの決定
-- 対戦終了判定
-
-### リクエスト
+#### サーバー → クライアント（両者の手が揃った時）
 ```json
 {
-  "matchingId": "string"
-}
-```
-
-### レスポンス（成功時）
-```json
-{
-  "success": true,
+  "type": "battle_result",
   "data": {
+    "battleId": "string",
     "result": {
-      "player1_hand": "string",
-      "player2_hand": "string",
-      "player1_result": "string",
-      "player2_result": "string",
-      "winner": number,
-      "is_draw": boolean,
-      "draw_count": number,
-      "judged": boolean,
-      "judged_at": "string",
-      "is_finished": boolean
-    }
-  }
+      "player1": {
+        "userId": "string",
+        "hand": "rock",
+        "result": "win"
+      },
+      "player2": {
+        "userId": "string",
+        "hand": "scissors",
+        "result": "lose"
+      },
+      "winner": 1,
+      "isDraw": false,
+      "drawCount": 0,
+      "isFinished": true
+    },
+    "status": "finished",
+    "message": "対戦終了！"
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "success": true
 }
 ```
 
-### 結果値
-- `player1_result` / `player2_result`: `"win"` | `"lose"` | `"draw"`
-- `winner`: `1` (プレイヤー1勝利) | `2` (プレイヤー2勝利) | `3` (引き分け)
+### 7. 引き分け時の手リセット
 
-## 6. 手のリセット
-
-### エンドポイント
-```
-POST /battle/reset_hands
-```
-
-### 用途
-- バトル画面での引き分け後の手リセット
-- 次ラウンド準備
-- 連続対戦サポート
-
-### リクエスト
+#### サーバー → クライアント（引き分け時）
 ```json
 {
-  "matchingId": "string"
-}
-```
-
-### レスポンス（成功時）
-```json
-{
-  "success": true,
+  "type": "battle_draw",
   "data": {
-    "message": "手をリセットしました",
-    "status": "ready"
-  }
+    "battleId": "string",
+    "result": {
+      "player1": {
+        "userId": "string",
+        "hand": "rock",
+        "result": "draw"
+      },
+      "player2": {
+        "userId": "string",
+        "hand": "rock",
+        "result": "draw"
+      },
+      "winner": 3,
+      "isDraw": true,
+      "drawCount": 1,
+      "isFinished": false
+    },
+    "status": "draw",
+    "message": "引き分けです！もう一度手を選択してください"
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "success": true
 }
 ```
 
-## 7. マッチ辞退
-
-### エンドポイント
-```
-POST /battle/quit
-```
-
-### 用途
-- バトル画面での対戦辞退
-- マッチングキャンセル
-- 対戦相手への通知
-
-### リクエスト
+#### クライアント → サーバー（手リセット要求）
 ```json
 {
-  "userId": "string",
-  "matchingId": "string"
-}
-```
-
-### レスポンス（成功時）
-```json
-{
-  "success": true,
+  "type": "reset_hands",
   "data": {
-    "message": "マッチを辞退しました",
-    "matchingId": "string",
-    "status": "cancelled"
-  }
+    "battleId": "string"
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "messageId": "uuid"
 }
 ```
+
+#### サーバー → クライアント（手リセット完了）
+```json
+{
+  "type": "hands_reset",
+  "data": {
+    "battleId": "string",
+    "status": "ready",
+    "message": "手をリセットしました。再度選択してください"
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "success": true
+}
+```
+
+### 8. 対戦辞退
+
+#### クライアント → サーバー
+```json
+{
+  "type": "battle_quit",
+  "data": {
+    "battleId": "string",
+    "userId": "string",
+    "reason": "user_action"
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "messageId": "uuid"
+}
+```
+
+#### サーバー → クライアント（辞退確認）
+```json
+{
+  "type": "battle_quit_confirmed",
+  "data": {
+    "battleId": "string",
+    "status": "cancelled",
+    "message": "対戦を辞退しました"
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "success": true
+}
+```
+
+#### サーバー → 相手クライアント（相手辞退通知）
+```json
+{
+  "type": "opponent_quit",
+  "data": {
+    "battleId": "string",
+    "status": "cancelled",
+    "message": "相手が対戦を辞退しました"
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
+  "success": true
+}
+```
+
+## ステータス値一覧
+
+- `waiting`: マッチング待機中
+- `matched`: マッチング成立（準備待ち）
+- `preparing`: 対戦準備中
+- `ready`: 対戦準備完了（手選択待ち）
+- `hand_submitted`: 手送信済み（相手待ち）
+- `judging`: 結果判定中
+- `draw`: 引き分け状態
+- `finished`: 対戦終了
+- `cancelled`: キャンセル・辞退
 
 ## エラーレスポンス
 
-### 共通エラー形式
+### WebSocketエラー形式
 ```json
 {
+  "type": "error",
+  "data": {
+    "originalType": "submit_hand",
+    "originalData": {
+      "battleId": "string",
+      "userId": "string",
+      "hand": "invalid_hand"
+    }
+  },
+  "timestamp": "2024-01-01T00:00:00Z",
   "success": false,
   "error": {
-    "code": "string",
-    "message": "string",
-    "details": "string"
+    "code": "INVALID_HAND",
+    "message": "無効な手が指定されました"
   }
 }
 ```
 
 ### エラーコード一覧
-- `INVALID_REQUEST`: リクエストが不正
-- `MATCH_NOT_FOUND`: マッチングが見つからない
-- `PLAYER_NOT_FOUND`: プレイヤーが見つからない
+- `INVALID_MESSAGE`: 無効なメッセージ形式
+- `BATTLE_NOT_FOUND`: バトルが見つからない
+- `PLAYER_NOT_IN_BATTLE`: プレイヤーがバトルに参加していない
 - `INVALID_HAND`: 無効な手
 - `INVALID_STATE`: 不正な状態での操作
-- `ALREADY_MATCHED`: 既にマッチング中
+- `ALREADY_SUBMITTED`: 既に手を送信済み
+- `CONNECTION_ERROR`: 接続エラー
+- `TIMEOUT`: タイムアウト
 - `INTERNAL_ERROR`: サーバー内部エラー
 
-## バトル画面でのフロー
+## WebSocketフロー
 
 ### 1. マッチング〜対戦開始
 ```
-1. POST /battle (マッチング開始)
-2. GET /battle (ポーリングで status: "matched" を待機)
-3. POST /battle/ready (準備完了)
-4. GET /battle (ポーリングで status: "ready" を待機)
+1. WebSocket接続: ws://host/ws/battle/{userId}
+2. 接続確立メッセージ受信: connection_established
+3. マッチング開始: matching_start → matching_started
+4. マッチング状況監視: matching_status（自動通知）
+5. マッチング成立: match_found
+6. 準備完了: battle_ready → battle_ready_status
+7. 対戦開始: battle_start（両者準備完了時）
 ```
 
 ### 2. 対戦実行
 ```
-1. POST /battle/hand (手を送信)
-2. GET /battle (相手の手を待機)
-3. POST /battle/judge (両者の手が揃ったら結果判定)
-4. GET /battle (結果を取得)
+1. 手送信: submit_hand → hand_submitted
+2. 相手待ち: （相手の手送信を自動待機）
+3. 結果判定: battle_result（自動実行）
 ```
 
 ### 3. 結果処理
 ```
-・引き分けの場合: POST /battle/reset_hands → 手順2に戻る
-・勝敗決定の場合: ロビー画面に戻る
-・辞退の場合: POST /battle/quit → ロビー画面に戻る
+・勝敗決定: battle_result → 接続切断
+・引き分け: battle_draw → reset_hands → hands_reset → 手順2に戻る
+・辞退: battle_quit → battle_quit_confirmed → 接続切断
 ```
 
 ## 実装ガイドライン
 
-### クライアント側
+### クライアント側（Flutter）
+
+#### WebSocket接続
 ```dart
-class BattleApiService {
-  static const String _baseUrl = 'http://160.251.137.105';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+class BattleWebSocketService {
+  static const String _baseWsUrl = 'ws://160.251.137.105/ws';
+  WebSocketChannel? _channel;
+  String? _userId;
   
-  // マッチング開始
-  Future<Map<String, dynamic>> startMatching(String userId) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl/battle'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'userId': userId}),
+  // WebSocket接続
+  Future<void> connect(String userId) async {
+    _userId = userId;
+    _channel = WebSocketChannel.connect(
+      Uri.parse('$_baseWsUrl/battle/$userId'),
     );
-    return json.decode(response.body);
+    
+    // メッセージリスナー設定
+    _channel!.stream.listen(
+      (message) => _handleMessage(json.decode(message)),
+      onError: (error) => _handleError(error),
+      onDone: () => _handleDisconnected(),
+    );
   }
   
-  // マッチング状態確認
-  Future<Map<String, dynamic>> getMatchStatus(String userId, [String? matchingId]) async {
-    String url = '$_baseUrl/battle?userId=$userId';
-    if (matchingId != null) {
-      url += '&matchingId=$matchingId';
-    }
-    final response = await http.get(Uri.parse(url));
-    return json.decode(response.body);
+  // メッセージ送信
+  void _sendMessage(Map<String, dynamic> message) {
+    message['timestamp'] = DateTime.now().toIso8601String();
+    message['messageId'] = Uuid().v4();
+    _channel?.sink.add(json.encode(message));
+  }
+  
+  // マッチング開始
+  void startMatching() {
+    _sendMessage({
+      'type': 'matching_start',
+      'data': {
+        'userId': _userId,
+      },
+    });
   }
   
   // 準備完了
-  Future<Map<String, dynamic>> setReady(String userId, String matchingId) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl/battle/ready'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'userId': userId, 'matchingId': matchingId}),
-    );
-    return json.decode(response.body);
+  void setReady(String battleId) {
+    _sendMessage({
+      'type': 'battle_ready',
+      'data': {
+        'battleId': battleId,
+        'userId': _userId,
+      },
+    });
   }
   
   // 手の送信
-  Future<Map<String, dynamic>> submitHand(String userId, String matchingId, String hand) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl/battle/hand'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'userId': userId, 'matchingId': matchingId, 'hand': hand}),
-    );
-    return json.decode(response.body);
-  }
-  
-  // 結果判定
-  Future<Map<String, dynamic>> judgeMatch(String matchingId) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl/battle/judge'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'matchingId': matchingId}),
-    );
-    return json.decode(response.body);
+  void submitHand(String battleId, String hand) {
+    _sendMessage({
+      'type': 'submit_hand',
+      'data': {
+        'battleId': battleId,
+        'userId': _userId,
+        'hand': hand,
+      },
+    });
   }
   
   // 手のリセット
-  Future<Map<String, dynamic>> resetHands(String matchingId) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl/battle/reset_hands'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'matchingId': matchingId}),
-    );
-    return json.decode(response.body);
+  void resetHands(String battleId) {
+    _sendMessage({
+      'type': 'reset_hands',
+      'data': {
+        'battleId': battleId,
+      },
+    });
   }
   
-  // マッチ辞退
-  Future<Map<String, dynamic>> quitMatch(String userId, String matchingId) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl/battle/quit'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'userId': userId, 'matchingId': matchingId}),
-    );
-    return json.decode(response.body);
+  // 対戦辞退
+  void quitBattle(String battleId) {
+    _sendMessage({
+      'type': 'battle_quit',
+      'data': {
+        'battleId': battleId,
+        'userId': _userId,
+        'reason': 'user_action',
+      },
+    });
+  }
+  
+  // メッセージハンドラー
+  void _handleMessage(Map<String, dynamic> message) {
+    final type = message['type'];
+    final data = message['data'];
+    
+    switch (type) {
+      case 'connection_established':
+        _onConnectionEstablished(data);
+        break;
+      case 'matching_started':
+        _onMatchingStarted(data);
+        break;
+      case 'matching_status':
+        _onMatchingStatus(data);
+        break;
+      case 'match_found':
+        _onMatchFound(data);
+        break;
+      case 'battle_ready_status':
+        _onBattleReadyStatus(data);
+        break;
+      case 'battle_start':
+        _onBattleStart(data);
+        break;
+      case 'hand_submitted':
+        _onHandSubmitted(data);
+        break;
+      case 'battle_result':
+        _onBattleResult(data);
+        break;
+      case 'battle_draw':
+        _onBattleDraw(data);
+        break;
+      case 'hands_reset':
+        _onHandsReset(data);
+        break;
+      case 'battle_quit_confirmed':
+        _onBattleQuitConfirmed(data);
+        break;
+      case 'opponent_quit':
+        _onOpponentQuit(data);
+        break;
+      case 'error':
+        _onError(message);
+        break;
+    }
+  }
+  
+  // 接続切断
+  void disconnect() {
+    _sendMessage({
+      'type': 'disconnect',
+      'data': {
+        'reason': 'user_action',
+      },
+    });
+    _channel?.sink.close();
+    _channel = null;
   }
 }
 ```
 
 ### サーバー側実装要件
-1. **独立性**: ロビー・設定画面のAPIロジックと分離
-2. **リアルタイム**: Redis使用による高速な状態管理
-3. **同期処理**: 両プレイヤーの状態同期
-4. **エラー処理**: 接続断・タイムアウトへの対応
+
+#### FastAPI + WebSocket
+```python
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from typing import Dict, List
+import json
+import asyncio
+from datetime import datetime
+
+class BattleWebSocketManager:
+    def __init__(self):
+        self.active_connections: Dict[str, WebSocket] = {}
+        self.user_battles: Dict[str, str] = {}
+        self.battles: Dict[str, Dict] = {}
+    
+    async def connect(self, websocket: WebSocket, user_id: str):
+        await websocket.accept()
+        self.active_connections[user_id] = websocket
+        
+        # 接続確立メッセージ送信
+        await self.send_message(user_id, {
+            "type": "connection_established",
+            "data": {
+                "userId": user_id,
+                "sessionId": f"session_{user_id}_{int(datetime.now().timestamp())}",
+                "status": "connected"
+            },
+            "timestamp": datetime.now().isoformat(),
+            "success": True
+        })
+    
+    async def disconnect(self, user_id: str):
+        if user_id in self.active_connections:
+            del self.active_connections[user_id]
+        
+        # バトル中の場合は相手に通知
+        if user_id in self.user_battles:
+            battle_id = self.user_battles[user_id]
+            await self.handle_battle_quit(user_id, battle_id, "connection_lost")
+    
+    async def send_message(self, user_id: str, message: dict):
+        if user_id in self.active_connections:
+            await self.active_connections[user_id].send_text(json.dumps(message))
+    
+    async def handle_matching_start(self, user_id: str, data: dict):
+        # マッチング処理実装
+        pass
+    
+    async def handle_battle_ready(self, user_id: str, data: dict):
+        # 準備完了処理実装
+        pass
+    
+    async def handle_submit_hand(self, user_id: str, data: dict):
+        # 手送信処理実装
+        pass
+
+app = FastAPI()
+battle_manager = BattleWebSocketManager()
+
+@app.websocket("/ws/battle/{user_id}")
+async def websocket_battle_endpoint(websocket: WebSocket, user_id: str):
+    await battle_manager.connect(websocket, user_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            message = json.loads(data)
+            
+            message_type = message.get("type")
+            message_data = message.get("data", {})
+            
+            if message_type == "matching_start":
+                await battle_manager.handle_matching_start(user_id, message_data)
+            elif message_type == "battle_ready":
+                await battle_manager.handle_battle_ready(user_id, message_data)
+            elif message_type == "submit_hand":
+                await battle_manager.handle_submit_hand(user_id, message_data)
+            # 他のメッセージタイプも処理
+            
+    except WebSocketDisconnect:
+        await battle_manager.disconnect(user_id)
+```
+
+## 接続管理とエラー処理
+
+### 自動再接続
+```dart
+class BattleWebSocketService {
+  int _reconnectAttempts = 0;
+  static const int _maxReconnectAttempts = 3;
+  static const Duration _reconnectDelay = Duration(seconds: 2);
+  
+  Future<void> _handleDisconnected() async {
+    if (_reconnectAttempts < _maxReconnectAttempts) {
+      _reconnectAttempts++;
+      await Future.delayed(_reconnectDelay);
+      await connect(_userId!);
+    } else {
+      _onConnectionFailed();
+    }
+  }
+}
+```
+
+### ハートビート
+```dart
+Timer? _heartbeatTimer;
+
+void _startHeartbeat() {
+  _heartbeatTimer = Timer.periodic(Duration(seconds: 30), (timer) {
+    _sendMessage({
+      'type': 'ping',
+      'data': {},
+    });
+  });
+}
+```
+
+## REST API代替手段
+
+WebSocket接続が利用できない場合の代替として、従来のREST APIも併用可能です：
+
+- `GET /battle` - マッチング状態確認
+- `POST /battle` - マッチング開始
+- `POST /battle/ready` - 準備完了
+- `POST /battle/hand` - 手の送信
+- `POST /battle/judge` - 結果判定
+- `POST /battle/quit` - 対戦辞退
+
+ただし、リアルタイム性とパフォーマンスの観点から、WebSocketの使用を強く推奨します。
 
 ## 注意事項
-- **専用性**: このAPIはバトル画面専用です
-- **依存禁止**: ロビー・設定画面からの使用は禁止
-- **状態管理**: Redis使用による一時的な状態管理
-- **パフォーマンス**: リアルタイム性を重視した設計 
+
+### WebSocket使用時の重要な点
+1. **接続管理**: 適切な接続・切断処理
+2. **エラー処理**: 接続断・タイムアウトへの対応
+3. **メッセージ順序**: 非同期メッセージの順序管理
+4. **リソース管理**: メモリリーク防止
+5. **セキュリティ**: 認証・認可の適切な実装
+
+### 実装優先度
+1. **必須**: 基本的なマッチング・対戦機能
+2. **重要**: エラーハンドリング・再接続機能
+3. **推奨**: ハートビート・接続状態監視
+4. **オプション**: 高度な状態管理・ログ機能
+
+この仕様により、ポーリングベースの従来方式から大幅にパフォーマンスが向上し、よりスムーズなリアルタイム対戦体験を提供できます。 

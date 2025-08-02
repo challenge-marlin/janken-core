@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 じゃんけんバトル - テストページ</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 じゃんけんバトル</h1>
+            <div class="user-info" id="userInfo">
+                <span id="userDisplay">未ログイン</span>
+                <button id="logoutBtn" class="btn btn-secondary" style="display: none;">ログアウト</button>
+            </div>
+        </header>
+
+        <!-- ログイン画面 -->
+        <div id="loginSection" class="section">
+            <h2>🔐 ログイン</h2>
+            <div class="login-options">
+                <div class="login-method">
+                    <h3>開発用ログイン（簡単）</h3>
+                    <div class="dev-login">
+                        <select id="devUserSelect">
+                            <option value="">テストユーザーを選択</option>
+                            <option value="1">テストユーザー1</option>
+                            <option value="2">テストユーザー2</option>
+                            <option value="3">テストユーザー3</option>
+                            <option value="4">テストユーザー4</option>
+                            <option value="5">テストユーザー5</option>
+                        </select>
+                        <button id="devLoginBtn" class="btn btn-primary">ログイン</button>
+                    </div>
+                </div>
+                
+                <div class="login-method">
+                    <h3>Magic Link認証</h3>
+                    <div class="magic-login">
+                        <input type="email" id="emailInput" placeholder="メールアドレス">
+                        <button id="magicLinkBtn" class="btn btn-primary">Magic Link送信</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- バトル画面 -->
+        <div id="battleSection" class="section" style="display: none;">
+            <!-- 接続状態 -->
+            <div class="connection-status">
+                <div class="status-indicator" id="connectionStatus">
+                    <span class="status-dot offline"></span>
+                    <span id="statusText">未接続</span>
+                </div>
+                <button id="connectBtn" class="btn btn-primary">接続</button>
+                <button id="disconnectBtn" class="btn btn-secondary" style="display: none;">切断</button>
+            </div>
+
+            <!-- 対戦状態表示 -->
+            <div class="battle-status" id="battleStatus">
+                <h2 id="statusTitle">対戦待機中</h2>
+                <p id="statusMessage">WebSocketに接続してマッチングを開始してください</p>
+            </div>
+
+            <!-- マッチング情報 -->
+            <div id="matchingInfo" class="info-box" style="display: none;">
+                <h3>🔍 マッチング中...</h3>
+                <p>キュー位置: <span id="queuePosition">-</span></p>
+                <p>推定待ち時間: <span id="estimatedWait">-</span>秒</p>
+                <button id="cancelMatchingBtn" class="btn btn-danger">マッチングキャンセル</button>
+            </div>
+
+            <!-- 対戦相手情報 -->
+            <div id="opponentInfo" class="info-box" style="display: none;">
+                <h3>👤 対戦相手</h3>
+                <div class="opponent-display">
+                    <div id="opponentAvatar" class="avatar">👤</div>
+                    <div class="opponent-details">
+                        <p><strong id="opponentName">-</strong></p>
+                        <p>ID: <span id="opponentId">-</span></p>
+                    </div>
+                </div>
+                <button id="readyBtn" class="btn btn-success" style="display: none;">準備完了</button>
+            </div>
+
+            <!-- 手選択エリア -->
+            <div id="handSelection" class="hand-selection" style="display: none;">
+                <h3>✋ 手を選択してください</h3>
+                <div class="hands">
+                    <button class="hand-btn" data-hand="rock">
+                        <span class="hand-emoji">✊</span>
+                        <span class="hand-name">グー</span>
+                    </button>
+                    <button class="hand-btn" data-hand="scissors">
+                        <span class="hand-emoji">✌️</span>
+                        <span class="hand-name">チョキ</span>
+                    </button>
+                    <button class="hand-btn" data-hand="paper">
+                        <span class="hand-emoji">✋</span>
+                        <span class="hand-name">パー</span>
+                    </button>
+                </div>
+                <p id="handStatus">手を選択してください</p>
+            </div>
+
+            <!-- バトル結果 -->
+            <div id="battleResult" class="result-display" style="display: none;">
+                <h3 id="resultTitle">結果</h3>
+                <div class="battle-hands">
+                    <div class="player-result">
+                        <h4>あなた</h4>
+                        <div class="hand-display" id="yourHand">-</div>
+                        <div class="result-badge" id="yourResult">-</div>
+                    </div>
+                    <div class="vs">VS</div>
+                    <div class="player-result">
+                        <h4>相手</h4>
+                        <div class="hand-display" id="opponentHand">-</div>
+                        <div class="result-badge" id="opponentResult">-</div>
+                    </div>
+                </div>
+                <div class="result-actions">
+                    <button id="nextRoundBtn" class="btn btn-primary" style="display: none;">次のラウンド</button>
+                    <button id="newBattleBtn" class="btn btn-success" style="display: none;">新しい対戦</button>
+                    <button id="quitBattleBtn" class="btn btn-danger">対戦終了</button>
+                </div>
+            </div>
+
+            <!-- アクションボタン -->
+            <div class="action-buttons">
+                <button id="startMatchingBtn" class="btn btn-primary">マッチング開始</button>
+                <button id="debugResetBtn" class="btn btn-warning">デバッグ: 状態リセット</button>
+            </div>
+            
+            <!-- 統計・ランキングボタン -->
+            <div class="stats-buttons" style="margin-top: 15px; text-align: center;">
+                <button id="loadStatsBtn" class="btn btn-secondary">統計更新</button>
+                <button id="loadRankingBtn" class="btn btn-secondary">ランキング表示</button>
+            </div>
+        </div>
+
+        <!-- ログ表示 -->
+        <div class="log-section">
+            <h3>📋 ログ</h3>
+            <div id="logContainer">
+                <div class="log-controls">
+                    <button id="clearLogBtn" class="btn btn-secondary">ログクリア</button>
+                    <label>
+                        <input type="checkbox" id="autoScrollLog" checked> 自動スクロール
+                    </label>
+                </div>
+                <div id="logMessages"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="battle.js"></script>
+</body>
+</html>

@@ -7,18 +7,68 @@ FastAPIメインアプリケーション
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 import traceback
 import logging
+import os
 
 # ログレベルを設定
 logging.basicConfig(level=logging.DEBUG)
 
-from .shared.config.settings import settings
-from .screens.auth.router import router as auth_router
-from .shared.exceptions.handlers import BaseApplicationError
-from .infrastructure.monitoring.health import health_checker
-from .infrastructure.monitoring.metrics_router import router as metrics_router
+# 設定とルーターのインポートを個別に試してみる
+try:
+    from .shared.config.settings import settings
+    print("DEBUG: settings import OK")
+except Exception as e:
+    print(f"ERROR: settings import failed: {e}")
+    # フォールバック設定
+    class MockSettings:
+        debug = True
+        cors_origins = ["*"]
+        cors_methods = ["GET", "POST", "PUT", "DELETE"]
+        cors_headers = ["*"]
+        api_title = "Kaminote Janken API"
+        api_description = "じゃんけんゲームAPI"
+        api_version = "1.0.0"
+    settings = MockSettings()
+
+# auth_routerを再有効化
+try:
+    from .screens.auth.router import router as auth_router
+    print("DEBUG: auth_router import OK")
+except Exception as e:
+    print(f"ERROR: auth_router import failed: {e}")
+    auth_router = None
+
+# battle_routerを追加
+try:
+    from .screens.battle.router import router as battle_router
+    print("DEBUG: battle_router import OK")
+except Exception as e:
+    print(f"ERROR: battle_router import failed: {e}")
+    battle_router = None
+
+try:
+    from .shared.exceptions.handlers import BaseApplicationError
+    print("DEBUG: BaseApplicationError import OK")
+except Exception as e:
+    print(f"ERROR: BaseApplicationError import failed: {e}")
+    BaseApplicationError = Exception
+
+try:
+    from .infrastructure.monitoring.health import health_checker
+    print("DEBUG: health_checker import OK")
+except Exception as e:
+    print(f"ERROR: health_checker import failed: {e}")
+    health_checker = None
+
+try:
+    from .infrastructure.monitoring.metrics_router import router as metrics_router
+    print("DEBUG: metrics_router import OK")
+except Exception as e:
+    print(f"ERROR: metrics_router import failed: {e}")
+    metrics_router = None
 
 # ストレージルーターのインポートをtry-catchで囲む
 try:
@@ -52,10 +102,24 @@ app.add_middleware(
 
 
 # 画面単位ルーター登録
-app.include_router(auth_router, prefix="/api")
+if auth_router is not None:
+    app.include_router(auth_router)  # auth_routerには既に prefix="/api/auth" が含まれている
+    print("DEBUG: auth_router registered")
+else:
+    print("WARNING: auth_router is None, skipping registration")
+
+if battle_router is not None:
+    app.include_router(battle_router)  # battle_routerには既に prefix="/api/battle" が含まれている
+    print("DEBUG: battle_router registered")
+else:
+    print("WARNING: battle_router is None, skipping registration")
 
 # インフラストラクチャルーター登録
-app.include_router(metrics_router)  # /api/metrics, /api/status
+if metrics_router is not None:
+    app.include_router(metrics_router)  # /api/metrics, /api/status
+    print("DEBUG: metrics_router registered")
+else:
+    print("WARNING: metrics_router is None, skipping registration")
 
 # ストレージルーターの登録をtry-catchで囲む
 if storage_router is not None:
@@ -68,6 +132,20 @@ if storage_router is not None:
         print(f"Traceback: {traceback.format_exc()}")
 else:
     print("ERROR: ストレージルーターがNoneのため登録をスキップしました")
+
+# 静的ファイル配信設定
+monitoring_html_path = os.path.join(os.path.dirname(__file__), "..", "monitoring-html")
+if os.path.exists(monitoring_html_path):
+    app.mount("/monitoring", StaticFiles(directory=monitoring_html_path), name="monitoring")
+    print(f"DEBUG: 静的ファイル配信を設定しました: {monitoring_html_path}")
+    
+    # /auth/ パスでも同じディレクトリを配信（互換性のため）
+    auth_html_path = os.path.join(monitoring_html_path, "auth")
+    if os.path.exists(auth_html_path):
+        app.mount("/auth", StaticFiles(directory=auth_html_path), name="auth")
+        print(f"DEBUG: 認証ページ静的ファイル配信を設定しました: {auth_html_path}")
+else:
+    print(f"WARNING: monitoring-htmlディレクトリが見つかりません: {monitoring_html_path}")
 
 # デバッグ: 登録されたルートを確認
 print("=== 登録されたルート一覧 ===")
@@ -146,13 +224,18 @@ async def general_exception_handler(request: Request, exc: Exception):
 @app.get("/api/health")
 async def health_check():
     """アプリケーションヘルスチェック"""
-    return {
-        "status": "healthy",
-        "app_name": settings.app_name,
-        "app_version": settings.app_version,
-        "environment": settings.environment,
-        "message": "かみのてじゃんけんAPIサーバーは正常に動作しています"
-    }
+    try:
+        return {
+            "status": "healthy",
+            "app_name": "Kaminote Janken API",
+            "environment": "development",
+            "message": "かみのてじゃんけんAPIサーバーは正常に動作しています"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 
 # 詳細ヘルスチェック
@@ -267,6 +350,30 @@ if settings.debug:
             },
             "message": "デバッグ情報（開発環境のみ）"
         }
+
+
+# ライフサイクルイベント
+@app.on_event("startup")
+async def startup_event():
+    """アプリケーション起動時の初期化"""
+    try:
+        # データベース接続初期化
+        from .shared.database.connection_improved import init_database
+        await init_database()
+        print("INFO: Database connection initialized")
+    except Exception as e:
+        print(f"ERROR: Database initialization failed: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """アプリケーション終了時のクリーンアップ"""
+    try:
+        from .shared.database.connection_improved import close_database
+        await close_database()
+        print("INFO: Database connection closed")
+    except Exception as e:
+        print(f"ERROR: Database cleanup failed: {e}")
 
 
 # アプリケーション起動

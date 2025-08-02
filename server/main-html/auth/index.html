@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>認証API テストページ</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-section h2 {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+        }
+        
+        .response-area {
+            background: #1e1e1e;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            min-height: 100px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+        
+        .environment-selector {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-success { background-color: #4CAF50; }
+        .status-error { background-color: #f44336; }
+        .status-warning { background-color: #ff9800; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .captcha-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .hand-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .hand-btn {
+            padding: 10px 20px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 24px;
+            transition: all 0.3s;
+        }
+        
+        .hand-btn:hover {
+            border-color: #667eea;
+            background: #f0f2ff;
+        }
+        
+        .hand-btn.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+        
+        .config-section {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔐 じゃんけんゲーム 認証API テストページ</h1>
+        <p>各認証方式のAPIエンドポイントをテストできます</p>
+    </div>
+
+    <!-- 環境設定 -->
+    <div class="config-section">
+        <h3>🔧 テスト環境設定</h3>
+        <div class="form-group">
+            <label for="apiBaseUrl">APIベースURL:</label>
+            <select id="apiBaseUrl">
+                <option value="http://localhost">開発環境 (Nginx経由 - localhost:80)</option>
+                <option value="http://localhost:3000">開発環境 (直接 - localhost:3000)</option>
+                <option value="http://192.168.1.180">開発環境 (Nginx経由 - 192.168.1.180:80)</option>
+                <option value="http://192.168.1.180:3000">開発環境 (直接 - 192.168.1.180:3000)</option>
+                <option value="http://160.251.137.105">VPS環境</option>
+                <option value="https://avwnok61nj.execute-api.ap-northeast-3.amazonaws.com/proc">AWS環境</option>
+                <option value="custom">カスタム</option>
+            </select>
+        </div>
+        <div class="form-group" id="customUrlGroup" style="display: none;">
+            <label for="customUrl">カスタムURL:</label>
+            <input type="text" id="customUrl" placeholder="http://localhost:8000" />
+        </div>
+        <div style="margin-top: 10px;">
+            <span class="status-indicator" id="connectionStatus"></span>
+            <span id="connectionText">未接続</span>
+            <button class="btn btn-success" onclick="testConnection()">接続テスト</button>
+            <button class="btn btn-warning" onclick="window.simpleApiTest ? simpleApiTest() : alert('関数が見つかりません')">シンプルAPIテスト</button>
+            <button class="btn" onclick="window.simpleDevLogin ? simpleDevLogin() : alert('関数が見つかりません')">シンプル開発ログイン</button>
+        </div>
+    </div>
+
+    <div class="grid">
+        <!-- Magic Link認証テスト -->
+        <div class="test-section">
+            <h2>🔗 Magic Link 認証テスト</h2>
+            
+            <!-- Magic Link リクエスト -->
+            <h3>1. Magic Link リクエスト</h3>
+            <div class="form-group">
+                <label for="magicEmail">メールアドレス:</label>
+                <input type="email" id="magicEmail" value="test@example.com" />
+            </div>
+            
+            <!-- CAPTCHA -->
+            <div class="captcha-section">
+                <h4>じゃんけんCAPTCHA</h4>
+                <p>相手は <span id="opponentHand">✌️</span> を出しています。勝つ手を選んでください：</p>
+                <div class="hand-buttons">
+                    <button class="hand-btn" data-hand="✊" onclick="selectHand('✊')">✊ グー</button>
+                    <button class="hand-btn" data-hand="✌️" onclick="selectHand('✌️')">✌️ チョキ</button>
+                    <button class="hand-btn" data-hand="✋" onclick="selectHand('✋')">✋ パー</button>
+                </div>
+                <input type="hidden" id="selectedHand" />
+                <input type="hidden" id="captchaToken" />
+                <button class="btn btn-warning" onclick="generateCaptcha()">CAPTCHA更新</button>
+            </div>
+            
+            <div class="form-group">
+                <label for="recaptchaToken">reCAPTCHA Token (オプション):</label>
+                <input type="text" id="recaptchaToken" placeholder="03AGdBq24..." />
+            </div>
+            
+            <button class="btn" onclick="requestMagicLink()">Magic Link リクエスト</button>
+            <div class="response-area" id="magicLinkResponse">レスポンスがここに表示されます...</div>
+
+            <!-- Magic Link URL表示 -->
+            <div id="magicLinkUrlSection" style="display: none; margin-top: 15px;">
+                <h4>📧 送信されるMagic Link URL:</h4>
+                <div style="background: #e3f2fd; border: 1px solid #90caf9; border-radius: 5px; padding: 15px; margin: 10px 0;">
+                    <div style="font-weight: bold; margin-bottom: 10px;">メールに送信されるリンク:</div>
+                    <div id="magicLinkUrl" style="font-family: 'Courier New', monospace; word-break: break-all; background: white; padding: 10px; border-radius: 3px;"></div>
+                    <div style="margin-top: 15px;">
+                        <button class="btn btn-success" onclick="openMagicLink()">🔗 Magic Linkを開く（メール代替）</button>
+                        <button class="btn btn-warning" onclick="copyMagicLink()">📋 URLをコピー</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Magic Link 検証 -->
+            <h3>2. Magic Link 検証</h3>
+            <div class="form-group">
+                <label for="magicToken">Magic Link Token:</label>
+                <input type="text" id="magicToken" placeholder="token_from_email" />
+            </div>
+            <button class="btn" onclick="verifyMagicLink()">Magic Link 検証</button>
+            <div class="response-area" id="verifyResponse">レスポンスがここに表示されます...</div>
+        </div>
+
+        <!-- 開発用認証テスト -->
+        <div class="test-section">
+            <h2>⚡ 開発用認証テスト</h2>
+            
+            <!-- テストユーザーログイン -->
+            <h3>1. テストユーザーログイン</h3>
+            <div class="form-group">
+                <label for="testUserNumber">テストユーザー番号:</label>
+                <select id="testUserNumber">
+                    <option value="1">テストユーザー1</option>
+                    <option value="2">テストユーザー2</option>
+                    <option value="3">テストユーザー3</option>
+                    <option value="4">テストユーザー4</option>
+                    <option value="5">テストユーザー5</option>
+                </select>
+            </div>
+            <button class="btn btn-success" onclick="testUserLogin()">テストユーザーでログイン</button>
+            <div class="response-area" id="testUserResponse">レスポンスがここに表示されます...</div>
+
+            <!-- 開発用簡易ログイン -->
+            <h3>2. 開発用簡易ログイン</h3>
+            <div class="form-group">
+                <label for="devEmail">メールアドレス:</label>
+                <input type="email" id="devEmail" value="dev@example.com" />
+            </div>
+            <div class="form-group">
+                <label for="devMode">モード:</label>
+                <select id="devMode">
+                    <option value="dev">開発者</option>
+                    <option value="admin">管理者</option>
+                </select>
+            </div>
+            <button class="btn btn-warning" onclick="devLogin()">開発用ログイン</button>
+            <div class="response-area" id="devLoginResponse">レスポンスがここに表示されます...</div>
+        </div>
+    </div>
+
+    <!-- 従来形式認証テスト -->
+    <div class="test-section">
+        <h2>👤 従来形式認証テスト</h2>
+        <div class="grid">
+            <div>
+                <div class="form-group">
+                    <label for="userId">ユーザーID:</label>
+                    <input type="text" id="userId" value="testuser" />
+                </div>
+                <div class="form-group">
+                    <label for="password">パスワード:</label>
+                    <input type="password" id="password" value="testpass" />
+                </div>
+                <button class="btn" onclick="userInfoLogin()">従来形式ログイン</button>
+            </div>
+            <div class="response-area" id="userInfoResponse">レスポンスがここに表示されます...</div>
+        </div>
+    </div>
+
+    <!-- JWT管理セクション -->
+    <div class="test-section">
+        <h2>🎫 JWT トークン管理</h2>
+        <div class="form-group">
+            <label for="jwtToken">現在のJWTトークン:</label>
+            <input type="text" id="jwtToken" placeholder="JWT token will appear here..." readonly />
+        </div>
+        <button class="btn btn-success" onclick="copyToken()">トークンをコピー</button>
+        <button class="btn btn-warning" onclick="clearToken()">トークンをクリア</button>
+        <button class="btn" onclick="validateToken()">トークン検証</button>
+        <div class="response-area" id="tokenValidationResponse">トークン検証結果がここに表示されます...</div>
+    </div>
+
+    <script src="auth-test.js?v=1.2"></script>
+</body>
+</html> 

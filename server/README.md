@@ -357,16 +357,91 @@ AsyncSessionLocal = sessionmaker(
 )
 ```
 
-### Alembicマイグレーション
+### データベースセットアップ（推奨方法）
+
+#### 🐳 **Docker Compose（最推奨）**
+```bash
+# 1. MySQLサービス起動
+docker-compose up -d mysql
+
+# 2. テーブル作成
+docker cp database/sql/01_create_tables.sql kaminote-janken-mysql:/tmp/
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "source /tmp/01_create_tables.sql"
+
+# 3. シードデータ投入（順番重要）
+docker cp database/sql/02_seed_users_and_stats.sql kaminote-janken-mysql:/tmp/
+docker cp database/sql/03_seed_daily_ranking.sql kaminote-janken-mysql:/tmp/
+docker cp database/sql/04_seed_match_history.sql kaminote-janken-mysql:/tmp/
+
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "source /tmp/02_seed_users_and_stats.sql"
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "source /tmp/03_seed_daily_ranking.sql"
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "source /tmp/04_seed_match_history.sql"
+
+# 4. データ確認
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "SELECT COUNT(*) as users FROM users; SELECT COUNT(*) as matches FROM match_history; SELECT COUNT(*) as rankings FROM daily_ranking;"
+
+# 5. 全サービス起動
+docker-compose up -d
+```
+
+#### 🚀 **新規リポジトリ展開時の完全セットアップ**
+```bash
+# 1. リポジトリクローン後、serverディレクトリに移動
+cd server
+
+# 2. 全サービス起動（初回はMySQLのみ）
+docker-compose up -d mysql
+
+# 3. データベースセットアップ（上記の2-4の手順）
+# ... テーブル作成とシードデータ投入 ...
+
+# 4. 全サービス起動
+docker-compose up -d
+
+# 5. 動作確認
+curl http://localhost/api/health
+```
+
+#### 🚀 **Python直接実行**
+```bash
+# ローカル環境の完全セットアップ（マイグレーション + シードデータ）
+python scripts/setup_database.py --env local
+
+# VPS環境の場合
+python scripts/setup_database.py --env vps
+
+# 既存データを強制削除してセットアップ
+python scripts/setup_database.py --env local --force
+```
+
+#### 🔧 **個別実行**
+```bash
+# 1. マイグレーション実行のみ
+python scripts/run_migrations.py --env local
+
+# 2. シードデータ投入のみ
+python scripts/seed_database.py --env local
+
+# 3. 既存データを削除してシード投入
+python scripts/seed_database.py --env local --force
+```
+
+#### 📊 **投入されるデータ**
+- **ユーザー**: 100名のテストユーザー
+- **マッチ履歴**: 約9,000件の対戦記録
+- **デイリーランキング**: 99位までのランキング
+- **認証テーブル**: セッション・セキュリティ関連
+
+### 従来のAlembicコマンド
 
 ```bash
-# Alembicの初期化
+# Alembicの初期化（既に設定済み）
 alembic init migrations
 
-# マイグレーションファイルの生成
+# マイグレーションファイルの生成（⚠️ 要Python環境）
 alembic revision --autogenerate -m "Add user table"
 
-# マイグレーションの実行
+# マイグレーションの実行（⚠️ 要Python環境）
 alembic upgrade head
 
 # マイグレーション履歴の確認
@@ -378,6 +453,8 @@ alembic upgrade <revision_id>
 # ダウングレード
 alembic downgrade -1
 ```
+
+> **💡 注意**: Windows環境やPython環境の問題でAlembicコマンドが利用できない場合は、上記の**推奨方法**（Pythonスクリプト）をご利用ください。
 
 ### AWS環境での設定
 

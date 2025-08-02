@@ -6,10 +6,11 @@ Magic Link認証機能用のデータベースモデル
 
 from datetime import datetime, timedelta
 from typing import Optional
-from sqlalchemy import Column, String, DateTime, Boolean, Integer, Text, JSON, DECIMAL, ForeignKey, Index
+from sqlalchemy import Column, String, DateTime, Boolean, Integer, Text, JSON, DECIMAL, ForeignKey, Index, Enum, Date, BIGINT
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 import uuid
+import enum
 
 Base = declarative_base()
 
@@ -305,4 +306,146 @@ def create_magic_link_expires_at(minutes: int = 15) -> datetime:
 
 def create_captcha_expires_at(minutes: int = 10) -> datetime:
     """CAPTCHAの有効期限を生成"""
-    return datetime.utcnow() + timedelta(minutes=minutes) 
+    return datetime.utcnow() + timedelta(minutes=minutes)
+
+
+# ===== ゲーム関連のEnum定義 =====
+
+class HandType(enum.Enum):
+    """じゃんけんの手"""
+    rock = "rock"
+    paper = "paper"
+    scissors = "scissors"
+
+
+class GameResult(enum.Enum):
+    """ゲーム結果"""
+    win = "win"
+    lose = "lose"
+    draw = "draw"
+
+
+class MatchType(enum.Enum):
+    """マッチタイプ"""
+    random = "random"
+    friend = "friend"
+
+
+# ===== ゲーム関連のテーブル定義 =====
+
+class MatchHistory(Base):
+    """マッチング結果テーブル"""
+    __tablename__ = "match_history"
+    
+    fight_no = Column(BIGINT, primary_key=True, autoincrement=True)
+    player1_id = Column(String(36), nullable=False, index=True)
+    player2_id = Column(String(36), nullable=False, index=True)
+    player1_nickname = Column(String(50), nullable=True)
+    player2_nickname = Column(String(50), nullable=True)
+    player1_hand = Column(Enum(HandType), nullable=False)
+    player2_hand = Column(Enum(HandType), nullable=False)
+    player1_result = Column(Enum(GameResult), nullable=False)
+    player2_result = Column(Enum(GameResult), nullable=False)
+    winner = Column(Integer, nullable=False, default=0)  # 1:player1, 2:player2, 3:draw
+    draw_count = Column(Integer, nullable=False, default=0)
+    match_type = Column(Enum(MatchType), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    finished_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # インデックス
+    __table_args__ = (
+        Index('idx_p1', 'player1_id'),
+        Index('idx_p2', 'player2_id'),
+        Index('idx_p1_result', 'player1_id', 'player1_result'),
+        Index('idx_p2_result', 'player2_id', 'player2_result'),
+    )
+
+
+class DailyRanking(Base):
+    """デイリーランキングテーブル"""
+    __tablename__ = "daily_ranking"
+    
+    ranking_position = Column(Integer, primary_key=True)
+    user_id = Column(String(36), nullable=True)
+    wins = Column(Integer, nullable=True)
+    last_win_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+
+class AdminLogs(Base):
+    """管理者オペレーションログテーブル"""
+    __tablename__ = "admin_logs"
+    
+    log_id = Column(BIGINT, primary_key=True, autoincrement=True)
+    admin_user = Column(String(50), nullable=False)
+    operation = Column(String(100), nullable=False)
+    target_id = Column(String(36), nullable=False)
+    details = Column(Text, nullable=True)
+    operated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+
+class UserLogs(Base):
+    """ユーザー操作ログテーブル"""
+    __tablename__ = "user_logs"
+    
+    log_id = Column(BIGINT, primary_key=True, autoincrement=True)
+    user_id = Column(String(36), nullable=False, default='', index=True)
+    operation_code = Column(String(10), nullable=True)
+    operation = Column(String(100), nullable=True)
+    details = Column(Text, nullable=True)
+    operated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+
+class RegistrationItemdata(Base):
+    """ユーザー端末識別情報テーブル"""
+    __tablename__ = "registration_itemdata"
+    
+    management_code = Column(BIGINT, ForeignKey("users.management_code"), primary_key=True)
+    subnum = Column(Integer, primary_key=True, default=1)
+    itemtype = Column(Integer, nullable=False, default=0)
+    itemid = Column(String(128), nullable=False, index=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+
+class RefreshTokens(Base):
+    """リフレッシュトークン管理テーブル"""
+    __tablename__ = "refresh_tokens"
+    
+    token_id = Column(String(128), primary_key=True)
+    user_id = Column(String(36), ForeignKey("users.user_id"), nullable=False, index=True)
+    refresh_token_hash = Column(String(512), nullable=False)
+    device_id = Column(String(128), nullable=False)
+    issued_at = Column(DateTime, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    revoked = Column(Boolean, nullable=False, default=False)
+    revoked_reason = Column(String(100), nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+
+class OAuthAccounts(Base):
+    """OAuth認証アカウント連携テーブル"""
+    __tablename__ = "oauth_accounts"
+    
+    oauth_id = Column(String(128), primary_key=True)
+    user_id = Column(String(36), ForeignKey("users.user_id"), nullable=False)
+    provider = Column(String(20), nullable=False)
+    provider_user_id = Column(String(255), nullable=False)
+    access_token = Column(Text, nullable=True)
+    refresh_token = Column(Text, nullable=True)
+    token_expires_at = Column(DateTime, nullable=True)
+    profile_data = Column(JSON, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+
+class TwoFactorAuth(Base):
+    """2要素認証設定テーブル"""
+    __tablename__ = "two_factor_auth"
+    
+    user_id = Column(String(36), ForeignKey("users.user_id"), primary_key=True)
+    enabled = Column(Boolean, nullable=False, default=False)
+    secret_key = Column(String(32), nullable=False)
+    backup_codes = Column(JSON, nullable=True)
+    last_used = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow) 
