@@ -379,7 +379,7 @@ async def test_login(
         
         return AuthResponse(
             success=True,
-            data=result.get("data", result)
+            data=result  # login_as_test_userは{"user": {...}, "token": "..."}を返す
         )
     except Exception as e:
         return AuthResponse(

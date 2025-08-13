@@ -571,11 +571,8 @@ class AuthService:
         jwt_token = self._create_jwt_token(user)
 
         return {
-            "success": True,
-            "data": {
-                "user": user,
-                "token": jwt_token
-            }
+            "user": user,
+            "token": jwt_token
         }
     
     async def get_current_user(self, token: str = Depends(HTTPBearer())):

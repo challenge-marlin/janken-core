@@ -132,6 +132,7 @@ class JankenBattleClient {
             return;
         }
         
+        let data = null;
         try {
             this.log('info', `開発用ログイン試行: User${userId}`);
             
@@ -146,14 +147,16 @@ class JankenBattleClient {
                 })
             });
             
-            const data = await response.json();
+            data = await response.json();
+            this.log('info', `テストログインレスポンス:`, data);
             
-            if (data.success) {
-                this.jwtToken = data.auth.access_token;
+            if (data.success && data.data) {
+                // Laravel風新APIのレスポンス形式に対応
+                this.jwtToken = data.data.token;  // 統一されたtoken構造
                 this.currentUser = {
-                    id: data.user.user_id,  // サーバーから返されたuser_idを使用
-                    nickname: data.user.nickname,
-                    email: data.user.email
+                    id: data.data.user.user_id,  // サーバーから返されたuser_idを使用
+                    nickname: data.data.user.nickname,
+                    email: data.data.user.email
                 };
                 
                 // 認証情報を保存
@@ -166,10 +169,11 @@ class JankenBattleClient {
                 // ユーザー統計を取得・表示
                 await this.loadUserStats();
             } else {
-                throw new Error(data.message || '認証に失敗しました');
+                throw new Error(data.message || data.error?.details || '認証に失敗しました');
             }
         } catch (error) {
             this.log('error', `開発用ログインエラー: ${error.message}`);
+            this.log('error', `詳細レスポンス:`, data || 'レスポンスなし');
             alert(`ログインエラー: ${error.message}`);
         }
     }
@@ -199,6 +203,11 @@ class JankenBattleClient {
             if (data.success) {
                 alert('Magic Linkを送信しました。メールを確認してください。');
                 this.log('success', `Magic Link送信完了: ${email}`);
+                
+                // デバッグ用: Magic Link URLをログに表示
+                if (data.data && data.data.token) {
+                    this.log('info', `Magic Link Token: ${data.data.token}`);
+                }
             } else {
                 throw new Error(data.message || 'Magic Link送信に失敗しました');
             }
