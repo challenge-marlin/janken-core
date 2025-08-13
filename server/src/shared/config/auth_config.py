@@ -60,7 +60,7 @@ class AuthConfig:
         }
     }
 
-    # テストユーザー設定
+    # テストユーザー設定（Magic Link認証用）
     TEST_USERS: List[Dict[str, Any]] = [
         {
             "user_id": f"test_user_{i}",
@@ -71,6 +71,50 @@ class AuthConfig:
             "alias": f"じゃんけんテスター{i}"
         }
         for i in range(1, 6)
+    ]
+
+    # ID/パスワード認証用サンプルユーザー設定
+    SAMPLE_LOGIN_USERS: List[Dict[str, Any]] = [
+        {
+            "user_id": "sample_user_1",
+            "password": "password123",
+            "nickname": "サンプルユーザー1",
+            "profile_image_url": "https://lesson01.myou-kou.com/avatars/defaultAvatar1.png",
+            "title": "初心者プレイヤー",
+            "alias": "じゃんけん初心者1"
+        },
+        {
+            "user_id": "sample_user_2", 
+            "password": "password456",
+            "nickname": "サンプルユーザー2",
+            "profile_image_url": "https://lesson01.myou-kou.com/avatars/defaultAvatar2.png",
+            "title": "中級プレイヤー",
+            "alias": "じゃんけん中級2"
+        },
+        {
+            "user_id": "sample_user_3",
+            "password": "password789", 
+            "nickname": "サンプルユーザー3",
+            "profile_image_url": "https://lesson01.myou-kou.com/avatars/defaultAvatar3.png",
+            "title": "上級プレイヤー",
+            "alias": "じゃんけん上級3"
+        },
+        {
+            "user_id": "admin_user",
+            "password": "admin123",
+            "nickname": "管理者ユーザー",
+            "profile_image_url": "https://lesson01.myou-kou.com/avatars/defaultAvatar4.png", 
+            "title": "システム管理者",
+            "alias": "じゃんけん管理者"
+        },
+        {
+            "user_id": "demo_user",
+            "password": "demo123",
+            "nickname": "デモユーザー",
+            "profile_image_url": "https://lesson01.myou-kou.com/avatars/defaultAvatar5.png",
+            "title": "デモプレイヤー", 
+            "alias": "じゃんけんデモ"
+        }
     ]
 
     # CAPTCHA設定

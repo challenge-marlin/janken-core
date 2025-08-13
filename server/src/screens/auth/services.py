@@ -276,6 +276,11 @@ class AuthService:
         if not user_id or not password:
             raise ValidationError("ユーザーIDとパスワードは必須です")
         
+        # 開発環境の場合、サンプルユーザーで認証
+        if settings.environment == "development":
+            return await self._authenticate_sample_user(user_id, password)
+        
+        # 本番環境の場合、データベースで認証
         db = next(get_db())
         try:
             # ユーザー検索
@@ -308,6 +313,48 @@ class AuthService:
             raise AuthenticationError(f"ログイン処理に失敗しました: {str(e)}")
         finally:
             db.close()
+
+    async def _authenticate_sample_user(self, user_id: str, password: str) -> Dict[str, Any]:
+        """
+        開発環境用サンプルユーザー認証
+        
+        Args:
+            user_id: ユーザーID
+            password: パスワード
+            
+        Returns:
+            ユーザー情報とJWTトークン
+            
+        Raises:
+            AuthenticationError: 認証エラー
+        """
+        # サンプルユーザーから検索
+        sample_user = None
+        for user in AuthConfig.SAMPLE_LOGIN_USERS:
+            if user["user_id"] == user_id and user["password"] == password:
+                sample_user = user
+                break
+        
+        if not sample_user:
+            raise AuthenticationError("ユーザーIDまたはパスワードが正しくありません")
+        
+        # JWTトークン生成
+        jwt_token = self._create_jwt_token({
+            "user_id": sample_user["user_id"],
+            "email": f"{sample_user['user_id']}@example.com",
+            "nickname": sample_user["nickname"]
+        })
+        
+        return {
+            "user": {
+                "user_id": sample_user["user_id"],
+                "nickname": sample_user["nickname"],
+                "title": sample_user["title"],
+                "alias": sample_user["alias"],
+                "profile_image_url": sample_user["profile_image_url"]
+            },
+            "token": jwt_token
+        }
     
     async def _verify_captcha(self, captcha: Optional[Dict]) -> bool:
         """
@@ -558,4 +605,32 @@ class AuthService:
             raise HTTPException(
                 status_code=401,
                 detail=f"認証に失敗しました: {str(e)}"
-            ) 
+            )
+
+    async def get_current_user_from_token(self, token: str) -> Dict[str, Any]:
+        """
+        トークン文字列から直接ユーザー情報を取得
+        
+        Args:
+            token: JWT トークン文字列
+            
+        Returns:
+            ユーザー情報
+            
+        Raises:
+            AuthenticationError: 認証エラー
+        """
+        try:
+            # JWTトークン検証
+            payload = self.jwt_service.verify_token(token)
+            
+            return {
+                "email": payload.get("email"),
+                "user_id": payload.get("user_id"),
+                "nickname": payload.get("nickname"),
+                "role": payload.get("role", "user"),
+                "exp": payload.get("exp"),
+                "iat": payload.get("iat")
+            }
+        except Exception as e:
+            raise AuthenticationError(f"認証に失敗しました: {str(e)}") 

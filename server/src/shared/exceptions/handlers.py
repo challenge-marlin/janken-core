@@ -43,6 +43,18 @@ class DatabaseConnectionError(BaseApplicationError):
         )
 
 
+class APIException(BaseApplicationError):
+    """API例外クラス - Laravel風のカスタム例外"""
+    
+    def __init__(self, message: str, status_code: int = 400, details: Optional[Dict[str, Any]] = None):
+        self.status_code = status_code
+        super().__init__(
+            message=message,
+            error_code="API_ERROR",
+            details=details
+        )
+
+
 class ValidationError(BaseApplicationError):
     """バリデーションエラー"""
     
@@ -118,4 +130,17 @@ class ExternalServiceError(BaseApplicationError):
             message=message,
             error_code="EXTERNAL_SERVICE_ERROR",
             details=details
-        ) 
+        )
+
+
+# ========================================
+# ヘルパー関数
+# ========================================
+
+def handle_validation_error(error):
+    """バリデーションエラーハンドラー - Laravel風"""
+    return {
+        "success": False,
+        "message": "Validation failed",
+        "errors": getattr(error, 'errors', [str(error)])
+    } 

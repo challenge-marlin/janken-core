@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     redis_db: int = Field(default=0, env="REDIS_DB")
     
     # MinIO設定
-    minio_endpoint: str = Field(default="localhost:9000", env="MINIO_ENDPOINT")
+    minio_endpoint: str = Field(default="192.168.0.155:9000", env="MINIO_ENDPOINT")
     minio_access_key: str = Field(default="minioadmin", env="MINIO_ACCESS_KEY")
     minio_secret_key: str = Field(default="minioadmin", env="MINIO_SECRET_KEY")
     minio_secure: bool = Field(default=False, env="MINIO_SECURE")

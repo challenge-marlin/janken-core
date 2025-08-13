@@ -4,8 +4,8 @@
 -- =====================================================
 
 -- データベース作成
-CREATE DATABASE IF NOT EXISTS janken_battle_complete;
-USE janken_battle_complete;
+CREATE DATABASE IF NOT EXISTS janken_db;
+USE janken_db;
 
 -- =====================================================
 -- 1. 認証・セッション管理テーブル
@@ -699,4 +699,4 @@ LEFT JOIN user_stats us ON u.user_id = us.user_id;
 -- 完了メッセージ
 -- =====================================================
 
-SELECT '完全認証システム用データベーステーブル作成完了（既存システム統合版）' AS status;                                 
+SELECT 'じゃんけんDBテーブル作成完了' AS status;                                 

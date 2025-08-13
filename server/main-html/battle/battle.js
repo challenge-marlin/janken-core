@@ -135,25 +135,25 @@ class JankenBattleClient {
         try {
             this.log('info', `開発用ログイン試行: User${userId}`);
             
-            // 開発用認証APIを呼び出し
-            const response = await fetch(`${this.config.httpApiBase}/api/auth/dev-login`, {
+            // Laravel風新APIのテストユーザーログインAPIを呼び出し
+            const response = await fetch(`${this.config.httpApiBase}/api/auth/test-login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    userId: userId
+                    user_number: parseInt(userId)  // サーバー側のスキーマに合わせる
                 })
             });
             
             const data = await response.json();
             
             if (data.success) {
-                this.jwtToken = data.data.token;
+                this.jwtToken = data.auth.access_token;
                 this.currentUser = {
-                    id: `test-user-${userId}`,  // DB上のuser_id形式に合わせる
-                    nickname: `テストユーザー${userId}`,
-                    email: `test${userId}@example.com`
+                    id: data.user.user_id,  // サーバーから返されたuser_idを使用
+                    nickname: data.user.nickname,
+                    email: data.user.email
                 };
                 
                 // 認証情報を保存
@@ -166,7 +166,7 @@ class JankenBattleClient {
                 // ユーザー統計を取得・表示
                 await this.loadUserStats();
             } else {
-                throw new Error(data.error?.message || '認証に失敗しました');
+                throw new Error(data.message || '認証に失敗しました');
             }
         } catch (error) {
             this.log('error', `開発用ログインエラー: ${error.message}`);
@@ -184,7 +184,7 @@ class JankenBattleClient {
         try {
             this.log('info', `Magic Link送信試行: ${email}`);
             
-            const response = await fetch(`${this.config.httpApiBase}/api/auth/magic-link`, {
+            const response = await fetch(`${this.config.httpApiBase}/api/auth/request-magic-link`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -200,7 +200,7 @@ class JankenBattleClient {
                 alert('Magic Linkを送信しました。メールを確認してください。');
                 this.log('success', `Magic Link送信完了: ${email}`);
             } else {
-                throw new Error(data.error?.message || 'Magic Link送信に失敗しました');
+                throw new Error(data.message || 'Magic Link送信に失敗しました');
             }
         } catch (error) {
             this.log('error', `Magic Link送信エラー: ${error.message}`);

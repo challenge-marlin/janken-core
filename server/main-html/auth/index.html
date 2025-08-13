@@ -176,9 +176,12 @@
     </style>
 </head>
 <body>
-    <div class="header">
+            <div class="header">
         <h1>🔐 じゃんけんゲーム 認証API テストページ</h1>
-        <p>各認証方式のAPIエンドポイントをテストできます</p>
+        <p>Laravel風設計に準拠した認証APIエンドポイントをテストできます</p>
+        <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 14px;">
+            <strong>🆕 最新版:</strong> 統一されたエラーハンドリング、型安全性、リポジトリパターン対応
+        </div>
     </div>
 
     <!-- 環境設定 -->
@@ -240,8 +243,8 @@
                 <input type="text" id="recaptchaToken" placeholder="03AGdBq24..." />
             </div>
             
-            <button class="btn" onclick="requestMagicLink()">Magic Link リクエスト</button>
-            <div class="response-area" id="magicLinkResponse">レスポンスがここに表示されます...</div>
+            <button class="btn" onclick="requestMagicLink()">Magic Link リクエスト (新API)</button>
+            <div class="response-area" id="magicLinkResponse">Laravel風統一レスポンス形式で表示されます...</div>
 
             <!-- Magic Link URL表示 -->
             <div id="magicLinkUrlSection" style="display: none; margin-top: 15px;">
@@ -282,8 +285,8 @@
                     <option value="5">テストユーザー5</option>
                 </select>
             </div>
-            <button class="btn btn-success" onclick="testUserLogin()">テストユーザーでログイン</button>
-            <div class="response-area" id="testUserResponse">レスポンスがここに表示されます...</div>
+            <button class="btn btn-success" onclick="testUserLogin()">テストユーザーでログイン (新API)</button>
+            <div class="response-area" id="testUserResponse">LoginSuccessResponse形式で表示されます...</div>
 
             <!-- 開発用簡易ログイン -->
             <h3>2. 開発用簡易ログイン</h3>
@@ -298,27 +301,31 @@
                     <option value="admin">管理者</option>
                 </select>
             </div>
-            <button class="btn btn-warning" onclick="devLogin()">開発用ログイン</button>
-            <div class="response-area" id="devLoginResponse">レスポンスがここに表示されます...</div>
+            <button class="btn btn-warning" onclick="devLogin()">開発用ログイン (新API)</button>
+            <div class="response-area" id="devLoginResponse">リポジトリパターン対応のレスポンスが表示されます...</div>
         </div>
     </div>
 
-    <!-- 従来形式認証テスト -->
+    <!-- ユーザー情報認証テスト -->
     <div class="test-section">
-        <h2>👤 従来形式認証テスト</h2>
+        <h2>👤 ユーザー情報認証テスト</h2>
+        <div style="background: #e8f5e8; border: 1px solid #4caf50; border-radius: 5px; padding: 15px; margin-bottom: 15px;">
+            <strong>🎯 Laravel風設計:</strong> 新しい /user-info エンドポイントは型安全性とバリデーションを強化
+        </div>
         <div class="grid">
             <div>
                 <div class="form-group">
                     <label for="userId">ユーザーID:</label>
-                    <input type="text" id="userId" value="testuser" />
+                    <input type="text" id="userId" value="test_user_1" />
                 </div>
                 <div class="form-group">
                     <label for="password">パスワード:</label>
                     <input type="password" id="password" value="testpass" />
                 </div>
-                <button class="btn" onclick="userInfoLogin()">従来形式ログイン</button>
+                <button class="btn" onclick="userInfoLogin()">新形式ログイン (/user-info)</button>
+                <button class="btn btn-warning" onclick="userInfoLoginLegacy()" style="margin-top: 5px;">【非推奨】旧形式 (/UserInfo)</button>
             </div>
-            <div class="response-area" id="userInfoResponse">レスポンスがここに表示されます...</div>
+            <div class="response-area" id="userInfoResponse">型安全なレスポンスが表示されます...</div>
         </div>
     </div>
 
@@ -331,8 +338,91 @@
         </div>
         <button class="btn btn-success" onclick="copyToken()">トークンをコピー</button>
         <button class="btn btn-warning" onclick="clearToken()">トークンをクリア</button>
-        <button class="btn" onclick="validateToken()">トークン検証</button>
-        <div class="response-area" id="tokenValidationResponse">トークン検証結果がここに表示されます...</div>
+        <button class="btn" onclick="validateToken()">トークン検証 (/verify-token)</button>
+        <div class="response-area" id="tokenValidationResponse">Laravel風統一レスポンス形式で検証結果が表示されます...</div>
+        
+        <div style="margin-top: 15px; padding: 10px; background: #f0f2ff; border-radius: 5px; font-size: 13px;">
+            <strong>💡 新機能:</strong> 
+            <ul style="margin: 5px 0; padding-left: 20px;">
+                <li>依存注入によるサービス・リポジトリ管理</li>
+                <li>統一されたエラーハンドリング（APIException）</li>
+                <li>型安全なPydanticスキーマバリデーション</li>
+                <li>Laravel風のコントローラーパターン</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- サンプルユーザー情報表示 -->
+    <div class="test-section">
+        <h2>📋 サンプルユーザー情報（テスト用）</h2>
+        <div style="background: #e8f5e8; border: 1px solid #4caf50; border-radius: 5px; padding: 15px; margin-bottom: 15px;">
+            <strong>🔧 開発環境専用:</strong> 以下のサンプルユーザーでID/パスワード認証をテストできます
+        </div>
+        
+        <div class="grid">
+            <div>
+                <h3>🧪 テストユーザー（Magic Link認証用）</h3>
+                <div style="background: #f0f2ff; border: 1px solid #667eea; border-radius: 5px; padding: 15px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #667eea; color: white;">
+                                <th style="padding: 8px; text-align: left;">ユーザー番号</th>
+                                <th style="padding: 8px; text-align: left;">メールアドレス</th>
+                                <th style="padding: 8px; text-align: left;">ニックネーム</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd;">1</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">test1@example.com</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">テストユーザー1</td></tr>
+                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd;">2</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">test2@example.com</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">テストユーザー2</td></tr>
+                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd;">3</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">test3@example.com</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">テストユーザー3</td></tr>
+                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd;">4</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">test4@example.com</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">テストユーザー4</td></tr>
+                            <tr><td style="padding: 5px;">5</td><td style="padding: 5px;">test5@example.com</td><td style="padding: 5px;">テストユーザー5</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div>
+                <h3>🔑 サンプルユーザー（ID/パスワード認証用）</h3>
+                <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 15px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #ff9800; color: white;">
+                                <th style="padding: 8px; text-align: left;">ユーザーID</th>
+                                <th style="padding: 8px; text-align: left;">パスワード</th>
+                                <th style="padding: 8px; text-align: left;">ニックネーム</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">sample_user_1</td><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">password123</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">サンプルユーザー1</td></tr>
+                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">sample_user_2</td><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">password456</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">サンプルユーザー2</td></tr>
+                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">sample_user_3</td><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">password789</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">サンプルユーザー3</td></tr>
+                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">admin_user</td><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">admin123</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">管理者ユーザー</td></tr>
+                            <tr><td style="padding: 5px; font-family: monospace;">demo_user</td><td style="padding: 5px; font-family: monospace;">demo123</td><td style="padding: 5px;">デモユーザー</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 15px; padding: 10px; background: #f9f9f9; border-radius: 5px;">
+            <h4>💡 使用方法</h4>
+            <ul style="margin: 5px 0; padding-left: 20px; font-size: 14px;">
+                <li><strong>Magic Link認証:</strong> 上記メールアドレスでMagic Linkをリクエスト</li>
+                <li><strong>テストユーザーログイン:</strong> ユーザー番号（1-5）を選択してログイン</li>
+                <li><strong>ID/パスワード認証:</strong> 上記ユーザーID・パスワードを入力して「ユーザー情報認証テスト」を実行</li>
+                <li><strong>開発用ログイン:</strong> 任意のメールアドレスで開発者/管理者モードでログイン</li>
+            </ul>
+        </div>
+        
+        <div style="margin-top: 10px; padding: 10px; background: #ffe6e6; border: 1px solid #ff9999; border-radius: 5px; font-size: 13px;">
+            <strong>⚠️ 重要:</strong> 
+            <ul style="margin: 5px 0; padding-left: 20px;">
+                <li>これらのサンプルユーザーは開発環境専用です</li>
+                <li>本番環境では使用できません</li>
+                <li>パスワードは平文で管理されているため、実際のシステムでは使用しないでください</li>
+            </ul>
+        </div>
     </div>
 
     <script src="auth-test.js?v=1.2"></script>

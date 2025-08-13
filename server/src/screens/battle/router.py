@@ -11,7 +11,8 @@ import logging
 
 from .services import battle_service
 from .models import battle_manager
-from .database_service import battle_db_service
+# DB接続を削除
+# from .database_service import battle_db_service
 
 
 # バトル専用ルーター
@@ -273,15 +274,27 @@ async def get_user_stats(user_id: str):
         user_id: ユーザーID
     """
     try:
-        stats = await battle_db_service.get_user_stats(user_id)
-        if not stats:
-            return {
-                "success": False,
-                "error": {
-                    "code": "USER_NOT_FOUND",
-                    "message": "ユーザーが見つからないか、統計データがありません"
-                }
-            }
+        # DB接続を削除
+        # stats = await battle_db_service.get_user_stats(user_id)
+        # if not stats:
+        #     return {
+        #         "success": False,
+        #         "error": {
+        #             "code": "USER_NOT_FOUND",
+        #             "message": "ユーザーが見つからないか、統計データがありません"
+        #         }
+        #     }
+        
+        # メモリ上のデータを返す（DB接続がないため）
+        stats = {
+            "userId": user_id,
+            "totalMatches": 0,
+            "totalWins": 0,
+            "totalLosses": 0,
+            "totalDraws": 0,
+            "winRate": 0.0,
+            "lastMatchAt": None
+        }
         
         return {
             "success": True,
@@ -308,7 +321,34 @@ async def get_daily_ranking(limit: int = 20):
     """
     try:
         limit = min(limit, 50)  # 最大50件に制限
-        ranking = await battle_db_service.get_daily_ranking(limit)
+        # DB接続を削除
+        # ranking = await battle_db_service.get_daily_ranking(limit)
+        
+        # メモリ上のデータを返す（DB接続がないため）
+        ranking = [
+            {
+                "ranking_date": "2023-10-27",
+                "user_id": "user1",
+                "nickname": "Player 1",
+                "profile_image_url": "https://via.placeholder.com/50",
+                "total_matches": 10,
+                "total_wins": 7,
+                "total_losses": 3,
+                "total_draws": 0,
+                "win_rate": 0.700
+            },
+            {
+                "ranking_date": "2023-10-27",
+                "user_id": "user2",
+                "nickname": "Player 2",
+                "profile_image_url": "https://via.placeholder.com/50",
+                "total_matches": 10,
+                "total_wins": 6,
+                "total_losses": 4,
+                "total_draws": 0,
+                "win_rate": 0.600
+            }
+        ]
         
         return {
             "success": True,
@@ -338,15 +378,36 @@ async def get_battle_info(battle_id: str):
         battle_id: バトルID
     """
     try:
-        battle_info = await battle_db_service.get_battle_session(battle_id)
-        if not battle_info:
-            return {
-                "success": False,
-                "error": {
-                    "code": "BATTLE_NOT_FOUND",
-                    "message": "バトルが見つかりません"
-                }
-            }
+        # DB接続を削除
+        # battle_info = await battle_db_service.get_battle_session(battle_id)
+        # if not battle_info:
+        #     return {
+        #         "success": False,
+        #         "error": {
+        #             "code": "BATTLE_NOT_FOUND",
+        #             "message": "バトルが見つかりません"
+        #         }
+        #     }
+        
+        # メモリ上のデータを返す（DB接続がないため）
+        battle_info = {
+            "battleId": battle_id,
+            "status": "completed",
+            "player1": {
+                "userId": "player1",
+                "nickname": "Player 1",
+                "profileImageUrl": "https://via.placeholder.com/50"
+            },
+            "player2": {
+                "userId": "player2",
+                "nickname": "Player 2",
+                "profileImageUrl": "https://via.placeholder.com/50"
+            },
+            "drawCount": 0,
+            "winner": "player1",
+            "battleTime": "2023-10-27T10:00:00Z",
+            "createdAt": "2023-10-27T09:50:00Z"
+        }
         
         return {
             "success": True,
@@ -369,7 +430,11 @@ async def debug_cleanup():
     デバッグ用：期限切れバトルクリーンアップ
     """
     try:
-        cleaned_count = await battle_db_service.cleanup_expired_battles()
+        # DB接続を削除
+        # cleaned_count = await battle_db_service.cleanup_expired_battles()
+        
+        # メモリ上のデータを返す（DB接続がないため）
+        cleaned_count = 0
         
         return {
             "success": True,

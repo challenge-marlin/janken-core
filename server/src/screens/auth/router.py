@@ -1,58 +1,119 @@
 """
-認証関連のルーター
+認証画面専用ルーター - LaravelのControllerに相当
+
+Laravel風のコントローラーパターンに従い、明確な責任分離と
+統一されたエラーハンドリングを実装
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException
 from sqlalchemy.orm import Session
+from typing import Dict, Any
+from datetime import datetime
 
-from .models import (
+from .schemas import (
     MagicLinkRequest,
-    MagicLinkVerifyRequest,
+    MagicLinkVerifyRequest, 
     TestLoginRequest,
-    AuthResponse
+    DevLoginRequest,
+    UserInfoLoginRequest,
+    AuthResponse,
+    LoginSuccessResponse,
+    MagicLinkResponse
 )
 from .services import AuthService
+from .repositories import UserRepository, get_user_repository
 from ...shared.database.connection import get_db_session
+from ...shared.exceptions.handlers import (
+    APIException, 
+    ValidationError, 
+    AuthenticationError,
+    handle_validation_error
+)
 
-router = APIRouter(prefix="/api/auth", tags=["auth"])
-auth_service = AuthService()
+# Laravel風のルーター設定
+router = APIRouter(
+    prefix="/api/auth",
+    tags=["認証画面"],
+    responses={
+        400: {"description": "バリデーションエラー"},
+        401: {"description": "認証エラー"},
+        403: {"description": "権限エラー"},
+        500: {"description": "サーバーエラー"}
+    }
+)
 
-@router.post("/request-link", response_model=AuthResponse)
-async def request_magic_link(request: MagicLinkRequest):
-    """Magic Linkをリクエスト"""
+# AuthServiceインスタンス作成（Dependency Injection用）
+def get_auth_service() -> AuthService:
+    """AuthServiceのDependency Injection"""
+    return AuthService()
+
+# ========================================
+# Laravel風のコントローラーメソッド
+# ========================================
+
+@router.post("/request-magic-link", response_model=AuthResponse)
+async def request_magic_link(
+    request: MagicLinkRequest,
+    http_request: Request,
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """
+    Magic Linkリクエスト - Laravel風: AuthController@requestMagicLink
+    
+    Args:
+        request: Magic Linkリクエストデータ
+        http_request: HTTPリクエスト情報（IP取得用）
+        auth_service: 認証サービス（DI）
+    
+    Returns:
+        認証レスポンス
+    
+    Raises:
+        APIException: 業務エラー（自動的にエラーハンドラーで処理）
+    """
+    # Laravel風: $request->validate() に相当（Pydanticで自動実行）
+    
     try:
+        # IPアドレス取得（Laravel風: $request->ip()）
+        client_ip = http_request.client.host if http_request.client else "unknown"
+        
+        # サービス層に処理を委譲（Laravel風の責任分離）
         result = await auth_service.request_magic_link(
             email=request.email,
             captcha=request.captcha,
             recaptcha_token=request.recaptcha_token,
-            db=None  # データベース接続なし（開発用）
+            db=None  # 開発環境のため、DBなしで動作
         )
         
         return AuthResponse(
             success=True,
+            message="Magic link sent successfully",
             data=result
         )
-    except HTTPException as e:
+    except ValidationError as e:
         return AuthResponse(
             success=False,
-            message=str(e.detail),
+            message=str(e),
             error={
                 "code": "VALIDATION_ERROR",
-                "details": str(e.detail)
+                "details": str(e)
             }
         )
     except Exception as e:
         return AuthResponse(
             success=False,
-            message="サーバーエラーが発生しました",
+            message="Magic Linkリクエストに失敗しました",
             error={
-                "code": "INTERNAL_SERVER_ERROR",
+                "code": "MAGIC_LINK_ERROR",
                 "details": str(e)
             }
         )
 
 @router.post("/verify-magic-link", response_model=AuthResponse)
-async def verify_magic_link(request: MagicLinkVerifyRequest):
+async def verify_magic_link(
+    request: MagicLinkVerifyRequest,
+    auth_service: AuthService = Depends(get_auth_service)
+):
     """Magic Linkを検証"""
     try:
         result = await auth_service.verify_magic_link(
@@ -83,40 +144,12 @@ async def verify_magic_link(request: MagicLinkVerifyRequest):
             }
         )
 
-@router.post("/test-login", response_model=AuthResponse)
-async def test_login(
-    request: TestLoginRequest,
-    db: Session = Depends(get_db_session)
-):
-    """テストユーザーでログイン（開発環境専用）"""
-    try:
-        return await auth_service.login_as_test_user(
-            user_number=request.user_number,
-            db=db
-        )
-    except HTTPException as e:
-        return AuthResponse(
-            success=False,
-            message=str(e.detail),
-            error={
-                "code": "INVALID_REQUEST",
-                "details": str(e.detail)
-            }
-        )
-    except Exception as e:
-        return AuthResponse(
-            success=False,
-            message="サーバーエラーが発生しました",
-            error={
-                "code": "INTERNAL_SERVER_ERROR",
-                "details": str(e)
-            }
-        )
+
 
 @router.post("/dev-login", response_model=AuthResponse)
 async def dev_login(
     request: dict,
-    db: Session = Depends(get_db_session)
+    auth_service: AuthService = Depends(get_auth_service)
 ):
     """開発用簡易認証（開発/VPS環境のみ）"""
     try:
@@ -132,15 +165,6 @@ async def dev_login(
             success=True,
             data=result
         )
-    except HTTPException as e:
-        return AuthResponse(
-            success=False,
-            message=str(e.detail),
-            error={
-                "code": "INVALID_REQUEST",
-                "details": str(e.detail)
-            }
-        )
     except Exception as e:
         return AuthResponse(
             success=False,
@@ -151,95 +175,218 @@ async def dev_login(
             }
         )
 
-@router.post("/UserInfo", response_model=AuthResponse)
+@router.post("/user-info", response_model=AuthResponse)
 async def user_info_login(
-    request: dict,
-    db: Session = Depends(get_db_session)
+    request: UserInfoLoginRequest,
+    http_request: Request,
+    auth_service: AuthService = Depends(get_auth_service)
 ):
-    """従来形式ログイン（互換性維持）"""
+    """
+    従来形式ログイン - Laravel風: AuthController@userInfoLogin
+    
+    互換性維持のため既存のUserInfo APIを snake_case に変更
+    
+    Args:
+        request: ユーザー情報ログインリクエスト
+        http_request: HTTPリクエスト情報
+        auth_service: 認証サービス（DI）
+    
+    Returns:
+        認証レスポンス
+    """
     try:
-        user_id = request.get("userId")
-        password = request.get("password")
+        # IPアドレス取得
+        client_ip = http_request.client.host if http_request.client else "unknown"
         
+        # サービス層に処理を委譲
         result = await auth_service.user_info_login(
-            user_id=user_id,
-            password=password,
-            db=db
+            user_id=request.userId,  # 既存API互換のためaliasを使用
+            password=request.password
         )
         
         return AuthResponse(
             success=True,
+            message="ログインに成功しました",
             data=result
         )
-    except HTTPException as e:
+    except ValidationError as e:
         return AuthResponse(
             success=False,
-            message=str(e.detail),
+            message=str(e),
             error={
-                "code": "INVALID_REQUEST",
-                "details": str(e.detail)
+                "code": "VALIDATION_ERROR",
+                "details": str(e)
+            }
+        )
+    except AuthenticationError as e:
+        return AuthResponse(
+            success=False,
+            message=str(e),
+            error={
+                "code": "AUTHENTICATION_ERROR",
+                "details": str(e)
             }
         )
     except Exception as e:
         return AuthResponse(
             success=False,
-            message="サーバーエラーが発生しました",
+            message="ログインに失敗しました",
             error={
-                "code": "INTERNAL_SERVER_ERROR",
+                "code": "LOGIN_ERROR",
                 "details": str(e)
             }
         )
 
-@router.get("/protected-test")
-async def protected_test(
-    current_user: dict = Depends(auth_service.get_current_user)
+# 既存API互換性のための移行用エンドポイント（非推奨）
+@router.post("/UserInfo", response_model=AuthResponse, deprecated=True)
+async def user_info_login_legacy(
+    request: dict,
+    http_request: Request,
+    auth_service: AuthService = Depends(get_auth_service),
+    user_repo: UserRepository = Depends(get_user_repository)
 ):
-    """認証テスト用の保護されたエンドポイント"""
-    return {
-        "success": True,
-        "message": "認証が成功しました",
-        "user": current_user
-    }
+    """
+    【非推奨】従来形式ログイン（互換性維持）
+    
+    新しいクライアントは /user-info を使用してください
+    """
+    # 型安全でないdict形式を変換
+    user_info_request = UserInfoLoginRequest(
+        userId=request.get("userId", ""),
+        password=request.get("password", "")
+    )
+    
+    # 新しいエンドポイントに転送
+    result = await user_info_login(user_info_request, http_request, auth_service)
+    
+    # 既存形式のレスポンスとして返す
+    return result
 
-@router.get("/simple-test")
-async def simple_test():
-    """シンプルな動作確認用エンドポイント"""
-    return {
-        "success": True,
-        "message": "認証APIは正常に動作しています",
-        "timestamp": "2024-01-01T00:00:00Z"
-    }
-
-@router.post("/simple-dev-login")
-async def simple_dev_login(request: dict):
-    """シンプルな開発用ログイン（データベース接続なし）"""
+@router.get("/verify-token", response_model=AuthResponse)
+async def verify_token(
+    request: Request,
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """
+    トークン検証 - Laravel風: AuthController@verifyToken
+    
+    認証が必要な保護されたエンドポイントのテスト用
+    
+    Args:
+        request: HTTPリクエスト（Authorizationヘッダーから）
+        auth_service: 認証サービス（DI）
+    
+    Returns:
+        認証レスポンス
+    """
     try:
-        email = request.get("email", "test@example.com")
+        # Authorizationヘッダーからトークンを取得
+        authorization = request.headers.get("authorization")
+        if not authorization:
+            return AuthResponse(
+                success=False,
+                message="認証トークンが必要です",
+                error={
+                    "code": "TOKEN_MISSING",
+                    "details": "Authorizationヘッダーが見つかりません"
+                }
+            )
         
-        # 簡単なJWT生成（データベース接続なし）
-        from ...shared.services.jwt_service import jwt_service
+        # Bearer トークンの形式チェック
+        if not authorization.startswith("Bearer "):
+            return AuthResponse(
+                success=False,
+                message="不正なトークン形式です",
+                error={
+                    "code": "INVALID_TOKEN_FORMAT",
+                    "details": "Bearer形式で送信してください"
+                }
+            )
         
-        user_data = {
-            "email": email,
-            "user_id": f"dev_{email.split('@')[0]}",
-            "nickname": f"開発者_{email.split('@')[0]}",
-            "role": "developer"
-        }
+        # トークンを抽出
+        token = authorization.replace("Bearer ", "")
         
-        jwt_token = jwt_service.generate_token(user_data)
+        # JWTトークンを検証
+        current_user = await auth_service.get_current_user_from_token(token)
         
-        return {
-            "success": True,
-            "data": {
-                "token": jwt_token,
-                "user": user_data
+        return AuthResponse(
+            success=True,
+            message="Token is valid",
+            data={
+                "user": current_user,
+                "authenticated": True,
+                "token_info": {
+                    "valid": True,
+                    "type": "Bearer"
+                }
             }
-        }
+        )
     except Exception as e:
-        return {
-            "success": False,
-            "error": {
-                "code": "SIMPLE_LOGIN_ERROR",
-                "message": str(e)
+        return AuthResponse(
+            success=False,
+            message="トークン検証に失敗しました",
+            error={
+                "code": "TOKEN_VERIFICATION_FAILED",
+                "details": str(e)
             }
-        } 
+        )
+
+@router.get("/health", response_model=AuthResponse)
+async def health_check():
+    """
+    認証サービスヘルスチェック - Laravel風: AuthController@health
+    
+    サービスの動作確認用エンドポイント
+    
+    Returns:
+        ヘルスチェックレスポンス
+    """
+    return AuthResponse(
+        success=True,
+        message="認証サービスは正常に動作しています",
+        data={
+            "service": "auth",
+            "status": "healthy",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    )
+
+
+
+@router.post("/test-login", response_model=AuthResponse)
+async def test_login(
+    request: TestLoginRequest,
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """
+    テストユーザーログイン - Laravel風: AuthController@testLogin
+    
+    開発環境専用のテストユーザー認証機能
+    
+    Args:
+        request: テストログインリクエスト
+        auth_service: 認証サービス（DI）
+    
+    Returns:
+        認証レスポンス
+    """
+    try:
+        # サービス層に処理を委譲（既存のlogin_as_test_userメソッドを使用）
+        result = await auth_service.login_as_test_user(
+            user_number=request.user_number,
+            db=None  # 開発環境のため、DBなしで動作
+        )
+        
+        return AuthResponse(
+            success=True,
+            data=result.get("data", result)
+        )
+    except Exception as e:
+        return AuthResponse(
+            success=False,
+            message="テストユーザーログインに失敗しました",
+            error={
+                "code": "TEST_LOGIN_ERROR", 
+                "details": str(e)
+            }
+        ) 

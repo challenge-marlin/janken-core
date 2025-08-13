@@ -10,6 +10,9 @@
     <div class="container">
         <header>
             <h1>🎮 じゃんけんバトル</h1>
+            <div style="background: rgba(102, 126, 234, 0.1); padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 14px;">
+                <strong>🆕 Laravel風設計対応:</strong> リアルタイムバトル、統一API、リポジトリパターン
+            </div>
             <div class="user-info" id="userInfo">
                 <span id="userDisplay">未ログイン</span>
                 <button id="logoutBtn" class="btn btn-secondary" style="display: none;">ログアウト</button>
@@ -21,25 +24,31 @@
             <h2>🔐 ログイン</h2>
             <div class="login-options">
                 <div class="login-method">
-                    <h3>開発用ログイン（簡単）</h3>
+                    <h3>テストユーザーログイン（Laravel風新API）</h3>
                     <div class="dev-login">
                         <select id="devUserSelect">
                             <option value="">テストユーザーを選択</option>
-                            <option value="1">テストユーザー1</option>
-                            <option value="2">テストユーザー2</option>
-                            <option value="3">テストユーザー3</option>
-                            <option value="4">テストユーザー4</option>
-                            <option value="5">テストユーザー5</option>
+                            <option value="1">テストユーザー1 (test_user_1)</option>
+                            <option value="2">テストユーザー2 (test_user_2)</option>
+                            <option value="3">テストユーザー3 (test_user_3)</option>
+                            <option value="4">テストユーザー4 (test_user_4)</option>
+                            <option value="5">テストユーザー5 (test_user_5)</option>
                         </select>
-                        <button id="devLoginBtn" class="btn btn-primary">ログイン</button>
+                        <button id="devLoginBtn" class="btn btn-primary">新APIでログイン (/test-login)</button>
+                    </div>
+                    <div style="margin-top: 10px; padding: 8px; background: #e8f5e8; border-radius: 3px; font-size: 12px;">
+                        💡 新機能: UserRepository経由で型安全な認証処理
                     </div>
                 </div>
                 
                 <div class="login-method">
-                    <h3>Magic Link認証</h3>
+                    <h3>Magic Link認証（Laravel風新API）</h3>
                     <div class="magic-login">
-                        <input type="email" id="emailInput" placeholder="メールアドレス">
-                        <button id="magicLinkBtn" class="btn btn-primary">Magic Link送信</button>
+                        <input type="email" id="emailInput" placeholder="メールアドレス" value="test@example.com">
+                        <button id="magicLinkBtn" class="btn btn-primary">Magic Link送信 (/request-magic-link)</button>
+                    </div>
+                    <div style="margin-top: 10px; padding: 8px; background: #e3f2fd; border-radius: 3px; font-size: 12px;">
+                        🔗 新機能: 統一エラーハンドリング、CAPTCHA対応、セキュリティ強化
                     </div>
                 </div>
             </div>
@@ -135,8 +144,11 @@
             
             <!-- 統計・ランキングボタン -->
             <div class="stats-buttons" style="margin-top: 15px; text-align: center;">
-                <button id="loadStatsBtn" class="btn btn-secondary">統計更新</button>
-                <button id="loadRankingBtn" class="btn btn-secondary">ランキング表示</button>
+                <button id="loadStatsBtn" class="btn btn-secondary">統計更新 (Laravel風新API)</button>
+                <button id="loadRankingBtn" class="btn btn-secondary">ランキング表示 (Laravel風新API)</button>
+            </div>
+            <div style="margin-top: 10px; padding: 8px; background: #fff3cd; border-radius: 3px; font-size: 12px; text-align: center;">
+                📊 新機能: リポジトリパターンによる統計データ管理、型安全なレスポンス
             </div>
         </div>
 

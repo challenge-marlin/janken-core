@@ -74,7 +74,7 @@ async function testConnection() {
         statusIndicator.className = 'status-indicator status-warning';
         statusText.textContent = '接続中...';
         
-        const response = await fetch(`${baseUrl}/api/health`, {
+        const response = await fetch(`${baseUrl}/api/auth/health`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -173,7 +173,7 @@ async function requestMagicLink() {
     }
     
     try {
-        const response = await fetch(`${baseUrl}/api/auth/request-link`, {
+        const response = await fetch(`${baseUrl}/api/auth/request-magic-link`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -305,8 +305,34 @@ async function devLogin() {
     }
 }
 
-// 従来形式ログイン
+// 新形式ログイン
 async function userInfoLogin() {
+    const baseUrl = getBaseUrl();
+    const userId = document.getElementById('userId').value;
+    const password = document.getElementById('password').value;
+    
+    try {
+        const response = await fetch(`${baseUrl}/api/auth/user-info`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                userId: userId,
+                password: password
+            })
+        });
+        
+        const data = await response.json();
+        displayResponse('userInfoResponse', data);
+        
+    } catch (error) {
+        displayResponse('userInfoResponse', null, error);
+    }
+}
+
+// 従来形式ログイン（非推奨）
+async function userInfoLoginLegacy() {
     const baseUrl = getBaseUrl();
     const userId = document.getElementById('userId').value;
     const password = document.getElementById('password').value;
@@ -363,7 +389,7 @@ async function validateToken() {
     
     try {
         // 保護されたエンドポイントにアクセスしてトークンを検証
-        const response = await fetch(`${baseUrl}/api/protected-test`, {
+        const response = await fetch(`${baseUrl}/api/auth/verify-token`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -419,7 +445,7 @@ async function simpleApiTest() {
         statusIndicator.className = 'status-indicator status-warning';
         statusText.textContent = 'APIテスト中...';
         
-        const response = await fetch(`${baseUrl}/api/auth/simple-test`, {
+        const response = await fetch(`${baseUrl}/api/auth/health`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -447,7 +473,7 @@ async function simpleDevLogin() {
     const baseUrl = getBaseUrl();
     
     try {
-        const response = await fetch(`${baseUrl}/api/auth/simple-dev-login`, {
+        const response = await fetch(`${baseUrl}/api/auth/dev-login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

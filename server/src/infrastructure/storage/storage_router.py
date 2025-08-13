@@ -153,7 +153,7 @@ async def view_file(bucket_type: str, object_name: str):
         url = minio_client.get_presigned_url(full_object_name, expires=3600)
         
         # MinIOの内部エンドポイントを外部アクセス可能なエンドポイントに変換
-        if "192.168.100.10:9000" in url:
+        if "192.168.0.155:9000" in url:
             # 開発環境では直接MinIOエンドポイントを使用
             external_url = url
         else:

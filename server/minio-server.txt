@@ -4,7 +4,7 @@ MinIOへの接続
 from minio import Minio
 
 minio_client = Minio(
-    endpoint="localhost:9000",
+    endpoint="192.168.0.155:9000",
     access_key="minioadmin",
     secret_key="minioadmin",
     secure=False
@@ -26,17 +26,17 @@ minio-server
 
 
 IP
-192.168.100.10
+192.168.0.155
 
 SSH
-ssh user@192.168.100.10
+ssh user@192.168.0.155
 
 
 ファイルはSCPでやりましょう。
-scp C:\works\forSSH\minio user@192.168.100.10:/home/user/
+scp C:\works\forSSH\minio user@192.168.0.155:/home/user/
 
-http://192.168.100.10:9000
-http://192.168.100.10:9001
+http://192.168.0.155:9000
+http://192.168.0.155:9001
 ユーザー名：minioadmin
 
 パスワード：minioadmin
@@ -54,10 +54,10 @@ http://192.168.100.10:9001
 
 | サービス              | アドレス例                        | 説明                    |
 | ----------------- | ---------------------------- | --------------------- |
-| **MinIO API**     | `http://192.168.100.10:9000` | S3互換 REST API エンドポイント |
-| **MinIO Console** | `http://192.168.100.10:9001` | 管理ダッシュボード（GUI）        |
+| **MinIO API**     | `http://192.168.0.155:9000` | S3互換 REST API エンドポイント |
+| **MinIO Console** | `http://192.168.0.155:9001` | 管理ダッシュボード（GUI）        |
 
-※ `192.168.100.10` はローカル環境時、VMの内部IP。VPSに移行した時点のIPは環境により異なるので適宜確認してください。
+※ `192.168.0.155` はローカル環境時、VMの内部IP。VPSに移行した時点のIPは環境により異なるので適宜確認してください。
 
 ---
 
@@ -75,7 +75,7 @@ http://192.168.100.10:9001
 ## ✅ 動作確認コマンド例
 
 ```bash
-curl -u minioadmin:minioadmin http://192.168.100.10:9000/minio/health/live
+curl -u minioadmin:minioadmin http://192.168.0.155:9000/minio/health/live
 ```
 
 正常応答：

@@ -46,16 +46,52 @@
 <body>
     <div class="container">
         <h1>🎮 Kaminote Janken API Server</h1>
-        <p>開発・管理用ページ</p>
+        <p>Laravel風設計に準拠した開発・管理用ページ</p>
+        
+        <div style="background: #e8f5e8; border: 1px solid #4caf50; border-radius: 5px; padding: 15px; margin: 20px 0; font-size: 14px;">
+            <strong>🆕 最新アップデート:</strong>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>Laravel風のMVCアーキテクチャ導入</li>
+                <li>リポジトリパターンによるデータ管理</li>
+                <li>統一されたエラーハンドリング（APIException）</li>
+                <li>型安全性の強化（Pydantic全面採用）</li>
+                <li>依存注入によるサービス管理</li>
+            </ul>
+        </div>
         
         <ul class="links">
-            <li><a href="/auth/">🔐 認証テストページ</a></li>
-            <li><a href="/battle/">🎮 じゃんけんバトルテスト</a></li>
-            <li><a href="/monitor/">📊 モニタリングページ</a></li>
-            <li><a href="/storage-html/">📁 ストレージ管理</a></li>
-            <li><a href="/api/docs">📖 API ドキュメント</a></li>
-            <li><a href="/api/health">💚 ヘルスチェック</a></li>
+            <li><a href="/auth/">🔐 認証テストページ（Laravel風新API対応）</a></li>
+            <li><a href="/battle/">🎮 じゃんけんバトルテスト（統一設計準拠）</a></li>
+            <li><a href="/monitor/">📊 システム監視ダッシュボード（統合ヘルスチェック）</a></li>
+            <li><a href="/storage-html/">📁 ストレージ管理（MinIO/S3抽象化）</a></li>
         </ul>
+        
+        <div style="margin-top: 30px; padding: 15px; background: #f0f2ff; border-radius: 5px; font-size: 13px;">
+            <h3 style="margin-top: 0; color: #333;">🎯 主要な新エンドポイント</h3>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li><code>POST /api/auth/request-magic-link</code> - Magic Link要求（統一バリデーション）</li>
+                <li><code>POST /api/auth/user-info</code> - ユーザー情報ログイン（型安全）</li>
+                <li><code>POST /api/auth/test-login</code> - テストユーザーログイン（Repository経由）</li>
+                <li><code>GET /api/auth/verify-token</code> - トークン検証（統一レスポンス）</li>
+                <li><code>GET /api/auth/health</code> - 認証サービスヘルスチェック</li>
+            </ul>
+            <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                ⚠️ 旧エンドポイント（<code>/UserInfo</code>等）は非推奨として残されています
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; font-size: 13px;">
+            <h3 style="margin-top: 0; color: #856404;">📊 開発・デバッグ向けリンク</h3>
+            <ul style="margin: 10px 0; padding-left: 20px; color: #856404;">
+                <li><a href="/docs" style="color: #856404;">📖 Swagger UI（開発者向けAPIドキュメント）</a></li>
+                <li><a href="/redoc" style="color: #856404;">📋 ReDoc（API仕様書）</a></li>
+                <li><a href="/api/health" style="color: #856404;">💚 ヘルスチェック（生JSON）</a></li>
+                <li><a href="/api/health/detailed" style="color: #856404;">🔍 詳細ヘルスチェック（全サービス）</a></li>
+            </ul>
+            <div style="margin-top: 10px; font-size: 12px; color: #6c757d;">
+                💡 システム監視ダッシュボードで見やすい形で確認することをお勧めします
+            </div>
+        </div>
     </div>
 </body>
 </html> 

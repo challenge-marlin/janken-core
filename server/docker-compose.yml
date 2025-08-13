@@ -23,7 +23,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=
       - REDIS_DB=0
-      - MINIO_ENDPOINT=192.168.100.10:9000
+      - MINIO_ENDPOINT=192.168.0.155:9000
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
       - MINIO_SECURE=false
@@ -70,7 +70,6 @@ services:
       - MYSQL_PASSWORD=app_password
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./database/sql:/docker-entrypoint-initdb.d
     networks:
       - kaminote-network
     restart: unless-stopped

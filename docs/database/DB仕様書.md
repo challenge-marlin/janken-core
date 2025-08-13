@@ -1,509 +1,572 @@
-# データベース仕様書（Magic Link認証対応版）
+# データベース仕様書（完全認証システム統合版）
 
 ## 概要
-本システムはMySQLデータベースを使用し、Magic Link方式による認証システムを採用しています。
-ユーザーはメールアドレスのみでアカウント作成・ログインが可能で、パスワードレス認証を実現しています。
+
+本システムはMySQLデータベースを使用し、**Magic Link + JWT + パスワード（任意）**の併用認証システムを採用しています。
+既存のじゃんけんゲーム機能との完全な互換性を保ちながら、最新のセキュリティ要件を満たす認証基盤を提供します。
+
+### 主要な特徴
+- **Magic Link認証**: パスワードレス認証をメイン方式として採用
+- **JWT認証**: アクセストークン（15分）+ リフレッシュトークン（30日）の組み合わせ
+- **パスワード認証**: 非常口として任意で設定可能
+- **Redis連携**: リアルタイム処理とセッション管理
+- **マルチデバイス対応**: 端末ごとの細かいセッション制御
+- **セキュリティ強化**: 2FA、レート制限、ブルートフォース対策
+
+---
 
 ## テーブル一覧
 
-### 既存テーブル（ゲーム機能）
-- **users**：ユーザー情報  
-- **user_stats**：ユーザー統計（勝敗記録等）
-- **match_history**：マッチング結果（履歴）  
-- **daily_ranking**：デイリーランキング  
-- **registration_itemdata**：ユーザー端末識別情報  
-- **user_logs**：ユーザー操作ログ  
-- **admin_logs**：管理者オペレーションログ  
+### 🔐 認証・セッション管理
+| テーブル名 | 用途 | 重要度 |
+|-----------|------|--------|
+| `users` | ユーザー基本情報 | ⭐⭐⭐ |
+| `user_profiles` | ユーザー詳細プロフィール | ⭐⭐ |
+| `auth_credentials` | パスワード認証情報 | ⭐⭐ |
+| `user_devices` | 端末管理 | ⭐⭐ |
+| `magic_link_tokens` | Magic Link認証トークン | ⭐⭐⭐ |
+| `sessions` | セッション管理 | ⭐⭐⭐ |
+| `refresh_tokens` | リフレッシュトークン管理 | ⭐⭐⭐ |
+| `jwt_blacklist` | JWT即時失効管理 | ⭐⭐ |
+| `two_factor_auth` | 2要素認証設定 | ⭐⭐ |
+| `oauth_accounts` | OAuth連携（将来用） | ⭐ |
 
-### 認証関連テーブル（Magic Link対応）
-- **magic_links**：Magic Link認証トークン管理 ⭐NEW
-- **captcha_challenges**：じゃんけんCAPTCHA + reCAPTCHA管理 ⭐NEW  
-- **rate_limits**：レート制限管理 ⭐NEW
-- **sessions**：セッション管理  
-- **refresh_tokens**：リフレッシュトークン管理  
-- **security_events**：セキュリティイベント記録  
-- **login_attempts**：ログイン試行記録  
-- **two_factor_auth**：2要素認証設定  
+### 🛡️ セキュリティ・監査
+| テーブル名 | 用途 | 重要度 |
+|-----------|------|--------|
+| `login_attempts` | ログイン試行記録 | ⭐⭐⭐ |
+| `security_events` | セキュリティイベント記録 | ⭐⭐⭐ |
+| `admin_logs` | 管理者操作ログ | ⭐⭐ |
 
-### 将来的な拡張用テーブル
-- **oauth_accounts**：OAuth連携アカウント（2025-06現在未使用）  
+### 🎮 ゲーム機能
+| テーブル名 | 用途 | 重要度 |
+|-----------|------|--------|
+| `battle_results` | バトル結果記録 | ⭐⭐⭐ |
+| `battle_rounds` | バトルラウンド詳細 | ⭐⭐ |
+| `user_stats` | ユーザー統計 | ⭐⭐⭐ |
+| `daily_rankings` | 日次ランキング | ⭐⭐ |
+| `weekly_rankings` | 週次ランキング | ⭐⭐ |
 
----
-
-## Magic Link認証関連テーブル詳細
-
-### 1. magic_links（Magic Link認証トークン管理）⭐NEW
-Magic Link認証で使用するワンタイムトークンを管理するテーブル
-
-| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明 |
-|---------|--------|-----|----------|------------|------|
-| ID | id | BIGINT AUTO_INCREMENT | NO (PK) | | 主キー |
-| トークンハッシュ | token_hash | VARCHAR(255) | NO | | Magic Linkトークンのハッシュ値 |
-| メールアドレス | email | VARCHAR(255) | NO | | 送信先メールアドレス |
-| 有効期限 | expires_at | DATETIME | NO | | トークン有効期限（15分） |
-| 使用済みフラグ | used | BOOLEAN | NO | FALSE | 使用済み状態 |
-| 使用日時 | used_at | DATETIME | YES | | 使用された日時 |
-| 作成日時 | created_at | DATETIME | NO | CURRENT_TIMESTAMP | 作成日時 |
-
-#### インデックス
-- **idx_magic_links_token_hash**: (token_hash) UNIQUE
-- **idx_magic_links_email**: (email)
-- **idx_magic_links_expires_at**: (expires_at)
-
-#### 機能
-- トークンは15分間有効
-- ワンタイム使用（used=trueになると再利用不可）
-- 期限切れトークンは定期的にクリーンアップ
-
-### 2. captcha_challenges（CAPTCHA管理）⭐NEW
-じゃんけんCAPTCHA + Google reCAPTCHA v2の管理用テーブル
-
-| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明 |
-|---------|--------|-----|----------|------------|------|
-| ID | id | BIGINT AUTO_INCREMENT | NO (PK) | | 主キー |
-| チャレンジトークン | challenge_token | VARCHAR(255) | NO | | CAPTCHA署名付きトークン |
-| 質問データ | question_data | JSON | NO | | じゃんけん問題の詳細 |
-| 正解 | correct_answer | VARCHAR(20) | NO | | 正解の手（rock/paper/scissors） |
-| 有効期限 | expires_at | DATETIME | NO | | チャレンジ有効期限（5分） |
-| 使用済みフラグ | used | BOOLEAN | NO | FALSE | 使用済み状態 |
-| reCAPTCHAトークン | recaptcha_token | VARCHAR(500) | YES | | Google reCAPTCHAトークン |
-| reCAPTCHA検証結果 | recaptcha_verified | BOOLEAN | NO | FALSE | reCAPTCHA検証成功フラグ |
-| 作成日時 | created_at | DATETIME | NO | CURRENT_TIMESTAMP | 作成日時 |
-
-#### インデックス
-- **idx_captcha_challenge_token**: (challenge_token) UNIQUE
-- **idx_captcha_expires_at**: (expires_at)
-
-#### question_dataの構造例
-```json
-{
-  "opponent_hand": "✌️",
-  "opponent_hand_name": "scissors",
-  "question": "相手がチョキを出しています。勝つ手を選んでください",
-  "choices": [
-    {"value": "rock", "display": "✊ グー"},
-    {"value": "paper", "display": "✋ パー"},
-    {"value": "scissors", "display": "✌️ チョキ"}
-  ]
-}
-```
-
-### 3. rate_limits（レート制限管理）⭐NEW
-IP・エンドポイント単位でのレート制限を管理するテーブル
-
-| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明 |
-|---------|--------|-----|----------|------------|------|
-| ID | id | BIGINT AUTO_INCREMENT | NO (PK) | | 主キー |
-| IPアドレス | ip_address | VARCHAR(45) | NO | | クライアントのIPアドレス |
-| エンドポイント | endpoint | VARCHAR(100) | NO | | APIエンドポイント |
-| リクエスト数 | request_count | INT | NO | 0 | 現在のリクエスト数 |
-| ウィンドウ開始時間 | window_start | DATETIME | NO | | レート制限ウィンドウの開始時間 |
-| 最終リクエスト時間 | last_request_at | DATETIME | NO | CURRENT_TIMESTAMP | 最後のリクエスト時間 |
-
-#### インデックス
-- **idx_rate_limits_ip_endpoint**: (ip_address, endpoint) UNIQUE
-- **idx_rate_limits_window_start**: (window_start)
-
-#### レート制限設定例
-- `/auth/request-link`: 5分間に5回まで
-- `/auth/verify`: 1分間に10回まで
-- `/auth/captcha`: 1分間に20回まで
+### ⚙️ システム管理
+| テーブル名 | 用途 | 重要度 |
+|-----------|------|--------|
+| `system_settings` | システム設定 | ⭐⭐ |
+| `activity_logs` | アクティビティログ | ⭐⭐ |
+| `system_stats` | システム統計 | ⭐ |
 
 ---
 
-## 既存テーブル詳細
+## 認証・セッション管理テーブル詳細
 
-### 4. users（ユーザー情報）
+### 1. users（ユーザー基本情報）⭐⭐⭐
 
-**Magic Link認証対応により、以下の変更が加えられました：**
-- `password`フィールドは使用せず（NULL許可）
-- `email`フィールドが必須かつユニーク
-- 新規ユーザーは`register_type='magic_link'`で作成
+**用途**: 認証システムの中核となるユーザー基本情報管理
 
-| 論理名             | カラム名                 | データ型                | NOT NULL | デフォルト                                      | 備考                                       |
-|------------------|------------------------|------------------------|-----------|-----------------------------------------------|------------------------------------------|
-| 管理コード          | management_code        | BIGINT AUTO_INCREMENT  | YES (PK)  |                                               | 主キー、自動採番                              |
-| ユーザーID         | user_id                | VARCHAR(36)            | YES       |                                               | 一意識別子（UUID）                           |
-| 電子メール          | email                  | VARCHAR(255)           | **YES**   |                                               | **Magic Link認証で必須・ユニーク**             |
-| パスワード          | password               | VARCHAR(255)           | NO        |                                               | Magic Link認証では未使用                      |
-| 名前              | name                   | VARCHAR(50)            | NO        |                                               |                                             |
-| ニックネーム        | nickname               | VARCHAR(50)            | YES       |                                               | **必須項目**                               |
-| 郵便番号           | postal_code            | VARCHAR(10)            | NO        |                                               |                                             |
-| 住所              | address                | VARCHAR(255)           | NO        |                                               |                                             |
-| 電話番号           | phone_number           | VARCHAR(15)            | NO        |                                               |                                             |
-| 学校名            | university             | VARCHAR(100)           | NO        |                                               |                                             |
-| 生年月日           | birthdate              | DATE                   | NO        |                                               |                                             |
-| プロフィール写真URL  | profile_image_url      | VARCHAR(255)           | YES       |                                               | **NOT NULL制約**                          |
-| 学生証イメージURL    | student_id_image_url   | VARCHAR(255)           | YES       |                                               | **NOT NULL制約**                          |
-| 生成日            | created_at             | DATETIME               | NO        | CURRENT_TIMESTAMP                             | レコード作成日時                                 |
-| 更新日            | updated_at             | DATETIME               | NO        | CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | レコード更新日時                                 |
-| 登録種別           | register_type          | VARCHAR(20)            | NO        | **'magic_link'**                              | magic_link / google / line / apple           |
-| 学生証編集可能      | is_student_id_editable | TINYINT                | NO        | 0                                             | 0: 編集不可、1: 編集可                          |
-| BAN状態          | is_banned              | TINYINT                | NO        | 0                                             | 0:未設定、1:設定、2:復帰                        |
+| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明・用途 |
+|---------|--------|-----|----------|------------|------------|
+| 管理コード | management_code | BIGINT AUTO_INCREMENT | NO | | 既存システム互換用、内部管理・連携 |
+| ユーザーID | user_id | VARCHAR(50) | NO (PK) | | JWTのsubクレーム、セッション管理、外部キー参照用 |
+| メールアドレス | email | VARCHAR(255) | NO (UNIQUE) | | Magic Link送信先、ログイン識別子、重複防止 |
+| ニックネーム | nickname | VARCHAR(100) | NO | | ゲーム内表示名、ランキング表示 |
+| 権限レベル | role | ENUM | NO | 'user' | アクセス制御、機能制限（user/developer/admin） |
+| アクティブ状態 | is_active | BOOLEAN | NO | TRUE | アカウント有効性、BANユーザー管理 |
+| 作成日時 | created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | アカウント作成日時、統計・監査用 |
+| 更新日時 | updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 最終更新日時、アクティビティ監視 |
 
 #### インデックス
-- **idx_user_id**: (user_id)
-- **idx_email**: (email) UNIQUE ⭐NEW
+- **PRIMARY KEY**: user_id
+- **UNIQUE KEY**: management_code, email
+- **INDEX**: role, is_active, created_at
 
-#### Magic Link認証での新規ユーザー作成
-新規ユーザーは以下のデフォルト値で作成されます：
-- `nickname`: メールアドレスのローカル部分
-- `profile_image_url`: ランダムなデフォルトアバター
-- `student_id_image_url`: デフォルト学生証画像
-- `register_type`: 'magic_link'
+#### 特記事項
+- Magic Link認証では`email`が主要な識別子
+- `management_code`は既存システムとの互換性維持用
+- `user_id`はJWTトークンの`sub`クレームとして使用
 
-### 5. user_stats（ユーザー統計）
+---
 
-Magic Link認証で新規作成されたユーザーには、初期統計データが自動で作成されます。
+### 2. user_profiles（ユーザー詳細プロフィール）⭐⭐
 
-| 論理名               | カラム名                      | データ型    | NOT NULL | デフォルト      | 備考                                               |
-|--------------------|------------------------------|-----------|-----------|----------------|--------------------------------------------------|
-| 管理コード             | management_code             | BIGINT    | YES (PK)  |                | 主キー（外部キー）                                     |
-| ユーザーID            | user_id                     | VARCHAR(36) | YES     |                | ユーザー識別子                                        |
-| 通算勝利数            | total_wins                  | INT       | NO        | 0              | 通算の勝利数                                           |
-| 現在の連勝数          | current_win_streak          | INT       | NO        | 0              | 現在の連勝数                                           |
-| 最大連勝数            | max_win_streak              | INT       | NO        | 0              | 記録された最大連勝数                                       |
-| グーの出数           | hand_stats_rock             | INT       | NO        | 0              | グーの出数                                             |
-| チョキの出数          | hand_stats_scissors         | INT       | NO        | 0              | チョキの出数                                            |
-| パーの出数           | hand_stats_paper            | INT       | NO        | 0              | パーの出数                                             |
-| お気に入りの手         | favorite_hand               | VARCHAR(10) | YES     | NULL           | 最も多く出した手（例：'rock'）                                |
-| 直近の5手と勝敗        | recent_hand_results_str     | VARCHAR(255) | NO      | ''             | 例："G:W,P:D,S:L"（グー勝ち、パーあいこ、チョキ負け）               |
-| 当日勝利数            | daily_wins                  | INT       | NO        | 0              | 当日の勝利数                                           |
-| 当日敗北数            | daily_losses                | INT       | NO        | 0              | 当日の敗北数                                           |
-| 当日引き分け数         | daily_draws                 | INT       | NO        | 0              | 当日の引き分け数                                         |
-| 称号                | title                       | VARCHAR(50) | NO      | ''             | 現在表示中の称号                                         |
-| 称号リスト             | available_titles            | VARCHAR(255) | NO     | ''             | 獲得済み称号IDのCSV（例: 'title_001,title_003'）               |
-| 二つ名               | alias                       | VARCHAR(50) | NO      | ''             | 現在表示中の二つ名                                         |
-| 称号表示              | show_title                  | BOOLEAN   | NO        | TRUE           | 称号を他者に見せるか                                      |
-| 二つ名表示            | show_alias                  | BOOLEAN   | NO        | TRUE           | 二つ名を他者に見せるか                                     |
-| ユーザーランク         | user_rank                   | VARCHAR(20) | NO      | 'no_rank'      | 表示・報酬用のランク                                      |
-| リセット日           | last_reset_at              | DATE      | YES       |                | 日次リセット日時                                         |
+**用途**: ユーザーの詳細情報管理（個人情報含む）
 
-#### 主キー
-- management_code
+| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明・用途 |
+|---------|--------|-----|----------|------------|------------|
+| ユーザーID | user_id | VARCHAR(50) | NO (PK) | | users.user_idとの紐付け |
+| 実名 | full_name | VARCHAR(100) | YES | | 本人確認、公的手続き用 |
+| 電話番号 | phone_number | VARCHAR(15) | YES | | 連絡先、緊急時連絡用 |
+| 郵便番号 | postal_code | VARCHAR(10) | YES | | 住所情報、配送・統計用 |
+| 住所 | address | VARCHAR(255) | YES | | 住所情報、配送・統計用 |
+| 生年月日 | birthdate | DATE | YES | | 年齢制限、統計分析用 |
+| 学校名 | university | VARCHAR(100) | YES | | 学生認証、コミュニティ機能用 |
+| プロフィール画像 | profile_image_url | VARCHAR(500) | YES | | アバター表示、個性化 |
+| 学生証画像 | student_id_image_url | VARCHAR(500) | YES | | 学生認証、本人確認用 |
+| 学生証編集可否 | is_student_id_editable | BOOLEAN | NO | FALSE | 編集制御、不正防止 |
+| タイトル | title | VARCHAR(100) | YES | | ゲーム内称号、達成感演出 |
+| 別名 | alias | VARCHAR(100) | YES | | ニックネーム補完、個性化 |
 
 #### 外部キー
-- management_code → users(management_code)
-
-### 6. match_history（マッチング結果）
-じゃんけん対戦の結果履歴を管理するテーブル
-
-| カラム名       | 物理名              | 型                           | NULL許可 | デフォルト                   | 説明                                     |
-|--------------|--------------------|----------------------------|---------|----------------------------|----------------------------------------|
-| 戦い番号       | fight_no           | BIGINT AUTO_INCREMENT      | NO (PK) |                            | 対戦一意ID                                 |
-| ユーザー１番    | player1_id         | VARCHAR(36)                | NO      |                            | プレイヤー1のユーザーID                      |
-| ユーザー２番    | player2_id         | VARCHAR(36)                | NO      |                            | プレイヤー2のユーザーID                      |
-| プレイヤー1ニックネーム | player1_nickname  | VARCHAR(50)              | YES     |                            | プレイヤー1のニックネーム                      |
-| プレイヤー2ニックネーム | player2_nickname  | VARCHAR(50)              | YES     |                            | プレイヤー2のニックネーム                      |
-| プレイヤー1の手  | player1_hand       | ENUM('rock','paper','scissors') | NO      |                            | プレイヤー1が出した手                         |
-| プレイヤー2の手  | player2_hand       | ENUM('rock','paper','scissors') | NO      |                            | プレイヤー2が出した手                         |
-| プレイヤー1結果  | player1_result     | ENUM('win','lose','draw')   | NO      |                            | プレイヤー1の対戦結果                         |
-| プレイヤー2結果  | player2_result     | ENUM('win','lose','draw')   | NO      |                            | プレイヤー2の対戦結果                         |
-| 勝者           | winner            | TINYINT UNSIGNED            | NO      | 0                          | 0:未決、1:player1勝利、2:player2勝利、3:引き分け |
-| 引き分け回数     | draw_count        | INT                         | NO      | 0                          | 引き分け回数                                |
-| マッチングタイプ  | match_type        | ENUM('random','friend')     | NO      |                            | マッチング方式                              |
-| 生成日時        | created_at        | DATETIME(3)                 | NO      | CURRENT_TIMESTAMP(3)       | 対戦生成日時                               |
-| 確定日時        | finished_at       | DATETIME(3)                 | YES     |                            | 対戦確定日時                               |
-
-#### インデックス
-- **idx_p1**: (player1_id)  
-- **idx_p2**: (player2_id)  
-- **idx_p1_result**: (player1_id, player1_result)  
-- **idx_p2_result**: (player2_id, player2_result)  
-
-### 7. daily_ranking（デイリーランキング）
-
-| 論理名        | カラム名          | データ型     | NOT NULL | デフォルト                                      | 備考             |
-|-------------|------------------|------------|-----------|-----------------------------------------------|----------------|
-| ランキング順位   | ranking_position | INT        | YES (PK)  |                                               | 主キー           |
-| ユーザーID    | user_id          | VARCHAR(36) | YES       |                                               |                 |
-| 勝利数       | wins             | INT        | NO        |                                               | NULL許可         |
-| 最終勝利日時   | last_win_at      | DATETIME   | NO        |                                               |                 |
-| 更新日時     | updated_at       | DATETIME   | NO        | CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 更新自動更新       |
-
-### 8. registration_itemdata（ユーザー端末識別情報）
-ユーザーが利用する端末情報を管理するテーブル
-
-| カラム名         | 物理名           | 型             | NULL許可    | デフォルト | 説明                         |
-|----------------|----------------|---------------|-----------|----------|----------------------------|
-| ユーザー管理番号   | management_code | BIGINT        | NO (PK)   |          | ユーザー管理コード               |
-| 枝番            | subnum         | INT           | NO (PK)   | 1        | 同一ユーザー内での連番            |
-| デバイス種       | itemtype       | TINYINT       | NO        | 0        | 0:スマホ以外,1:iOS,2:Android |
-| デバイス識別ID    | itemid         | DATETIME      | NO        |          | 端末固有識別子                  |
-| 作成日時        | created_at     | DATETIME      | NO        | CURRENT_TIMESTAMP | 作成日時                      |
-
-#### 主キー
-- (management_code, subnum)  
-
-#### 外部キー
-- management_code → users(management_code)  
-
-### 9. user_logs（ユーザー操作ログ）
-ユーザーの操作イベントを時系列で記録するテーブル
-
-| カラム名         | 物理名            | 型                    | NULL許可 | デフォルト | 説明                                |
-|----------------|------------------|-----------------------|---------|----------|-----------------------------------|
-| ログID         | log_id           | BIGINT AUTO_INCREMENT | NO (PK) |          | ログID（主キー）                         |
-| ユーザーID      | user_id          | VARCHAR(36)           | NO      | ''       | ユーザー無関係通知時は空文字             |
-| 操作コード      | operation_code   | VARCHAR(10)           | YES     |          | 操作コード                             |
-| 操作           | operation        | VARCHAR(100)          | YES     |          | 操作内容                               |
-| 詳細           | details          | TEXT                  | YES     |          | 詳細説明                               |
-| 操作日時        | operated_at      | DATETIME              | NO      | CURRENT_TIMESTAMP | 操作日時                     |
-
-#### インデックス
-- **idx_user_logs_uid**: (user_id)  
-
-### 10. admin_logs（管理者オペレーションログ）
-管理者の操作履歴を記録するテーブル
-
-| カラム名      | 型                    | NULL許可 | デフォルト            | 説明                       |
-|-------------|-----------------------|---------|-----------------------|--------------------------|
-| log_id      | BIGINT AUTO_INCREMENT | NO (PK) |                       | ログID（主キー）              |
-| admin_user  | VARCHAR(50)           | NO      |                       | 管理者ユーザー名             |
-| operation   | VARCHAR(100)          | NO      |                       | 操作内容                   |
-| target_id   | VARCHAR(36)           | NO      |                       | 対象エンティティID           |
-| details     | TEXT                  | YES     |                       | 詳細                       |
-| operated_at | DATETIME              | NO      | CURRENT_TIMESTAMP     | 操作日時                   |
+- **user_id** → users(user_id) ON DELETE CASCADE
 
 ---
 
-## 認証・セキュリティ関連テーブル
+### 3. auth_credentials（パスワード認証情報）⭐⭐
 
-### 11. sessions（セッション管理）
-ユーザーセッション管理用。JWT + Redis でのセッション管理を補完し、デバイスごとの詳細な制御を実現。
+**用途**: パスワード認証の資格情報管理（任意設定）
 
-| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明 |
-|---------|--------|-----|----------|------------|------|
-| セッションID | session_id | VARCHAR(128) | NO (PK) | | セッション一意識別子 |
-| ユーザーID | user_id | VARCHAR(36) | NO | | ユーザー識別子 |
-| アクセストークン | access_token | VARCHAR(512) | NO | | JWTアクセストークン |
-| リフレッシュトークン | refresh_token | VARCHAR(512) | NO | | JWTリフレッシュトークン |
-| デバイスID | device_id | VARCHAR(128) | NO | | 端末識別子 |
-| 有効期限 | expires_at | DATETIME | NO | | セッション有効期限 |
-| 最終アクティビティ | last_activity | DATETIME | NO | | 最終アクセス日時 |
-| IPアドレス | ip_address | VARCHAR(45) | NO | | アクセス元IP |
+| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明・用途 |
+|---------|--------|-----|----------|------------|------------|
+| ユーザーID | user_id | VARCHAR(50) | NO (PK) | | users.user_idとの紐付け |
+| パスワードハッシュ | password_hash | VARCHAR(255) | YES | | Argon2idハッシュ値、認証時検証用 |
+| ハッシュアルゴリズム | password_algo | ENUM | NO | 'argon2id' | 将来のアルゴリズム移行対応 |
+| パスワードバージョン | password_version | SMALLINT | NO | 1 | ハッシュ強度変更履歴管理 |
+| パスワード更新日時 | password_updated_at | TIMESTAMP | YES | | 最終パスワード変更日時、強制変更判定 |
+| パスワード有効化 | is_password_enabled | BOOLEAN | NO | FALSE | パスワード認証の有効無効制御 |
+
+#### 外部キー
+- **user_id** → users(user_id) ON DELETE CASCADE
+
+#### 特記事項
+- Magic Link主体でも「非常口」として有効化可能
+- パスワード未設定でも`is_password_enabled=FALSE`で運用可能
+
+---
+
+### 4. user_devices（端末管理）⭐⭐
+
+**用途**: ユーザーの利用端末情報管理とセッション制御
+
+| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明・用途 |
+|---------|--------|-----|----------|------------|------------|
+| デバイスID | device_id | VARCHAR(100) | NO (PK) | | 端末一意識別子、セッション管理用 |
+| ユーザーID | user_id | VARCHAR(50) | NO | | users.user_idとの紐付け |
+| デバイス名 | device_name | VARCHAR(100) | YES | | ユーザー設定の端末名、管理画面表示用 |
+| デバイス種別 | device_type | ENUM | NO | 'unknown' | 端末種別識別、UI最適化用 |
+| OS情報 | os_info | VARCHAR(100) | YES | | OS詳細情報、互換性確認用 |
+| ブラウザ情報 | browser_info | VARCHAR(100) | YES | | ブラウザ詳細、機能対応確認用 |
+| 信頼済み | is_trusted | BOOLEAN | NO | FALSE | 信頼済み端末、2FA省略判定用 |
+| アクティブ | is_active | BOOLEAN | NO | TRUE | 端末有効性、利用制御用 |
+| 最終アクセス | last_accessed_at | TIMESTAMP | YES | | 最終アクセス日時、非アクティブ端末検知 |
+
+#### インデックス
+- **INDEX**: user_id, device_type, is_active, last_accessed_at
+
+---
+
+### 5. magic_link_tokens（Magic Link認証トークン）⭐⭐⭐
+
+**用途**: Magic Link認証のワンタイムトークン管理
+
+| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明・用途 |
+|---------|--------|-----|----------|------------|------------|
+| トークンハッシュ | token_hash | VARCHAR(128) | NO (PK) | | SHA-256ハッシュ値、改ざん防止・検索用 |
+| メールアドレス | email | VARCHAR(255) | NO | | 送信先メール、ユーザー識別用 |
+| ユーザーID | user_id | VARCHAR(50) | YES | | 既存ユーザーの場合の紐付け |
+| 発行日時 | issued_at | DATETIME | NO | | トークン生成日時、監査・統計用 |
+| 有効期限 | expires_at | DATETIME | NO | | 15分後設定、セキュリティ確保 |
+| 使用日時 | used_at | DATETIME | YES | | 使用済み日時、ワンタイム制御用 |
+| IPアドレス | ip_address | VARCHAR(45) | YES | | 発行元IP、不正検知用 |
+| ユーザーエージェント | user_agent | VARCHAR(255) | YES | | 発行環境情報、異常検知用 |
+
+#### インデックス
+- **PRIMARY KEY**: token_hash
+- **INDEX**: email, expires_at, user_id
+
+#### 特記事項
+- トークンは15分間有効（`expires_at`）
+- ワンタイム使用（`used_at`更新で無効化）
+- DBには生トークンではなくハッシュ値のみ保存
+
+---
+
+### 6. sessions（セッション管理）⭐⭐⭐
+
+**用途**: 端末ごとのセッション状態管理と制御
+
+| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明・用途 |
+|---------|--------|-----|----------|------------|------------|
+| セッションID | session_id | VARCHAR(100) | NO (PK) | | セッション一意識別子、Redis連携用 |
+| ユーザーID | user_id | VARCHAR(50) | NO | | users.user_idとの紐付け |
+| デバイスID | device_id | VARCHAR(100) | NO | | 端末識別、同時ログイン制御用 |
+| IPアドレス | ip_address | VARCHAR(45) | YES | | アクセス元IP、セキュリティ監視用 |
+| ユーザーエージェント | user_agent | VARCHAR(255) | YES | | ブラウザ情報、環境識別用 |
+| 作成日時 | created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | セッション開始日時 |
+| 最終アクセス | last_seen_at | TIMESTAMP | YES | | 最終活動日時、非アクティブ検知 |
+| 失効フラグ | is_revoked | BOOLEAN | NO | FALSE | セッション無効化、強制ログアウト用 |
+
+#### インデックス
+- **UNIQUE KEY**: (user_id, device_id) - 台数制限・重複防止
+- **INDEX**: user_id, device_id, last_seen_at
+
+---
+
+### 7. refresh_tokens（リフレッシュトークン管理）⭐⭐⭐
+
+**用途**: JWTリフレッシュトークンの管理と回転制御
+
+| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明・用途 |
+|---------|--------|-----|----------|------------|------------|
+| トークンID | token_id | VARCHAR(100) | NO (PK) | | サーバー生成ID、JTI相当、ローテーション管理用 |
+| セッションID | session_id | VARCHAR(100) | NO | | sessions.session_idとの紐付け |
+| トークンハッシュ | token_hash | VARCHAR(255) | NO | | ハッシュ化されたトークン値、検証用 |
+| 発行日時 | issued_at | DATETIME | NO | | トークン発行日時、監査用 |
+| 有効期限 | expires_at | DATETIME | NO | | 30〜90日後設定、長期認証用 |
+| 回転元ID | rotated_from | VARCHAR(100) | YES | | 旧トークンID、ローテーション履歴追跡 |
+| 失効フラグ | is_revoked | BOOLEAN | NO | FALSE | 失効状態、セキュリティ制御用 |
+
+#### インデックス
+- **UNIQUE KEY**: token_hash
+- **INDEX**: session_id, expires_at, is_revoked
+
+#### 特記事項
+- 「回転式」トークン採用（使用時に新しいトークンを発行）
+- `rotated_from`でローテーション履歴を追跡可能
+
+---
+
+## セキュリティ・監査テーブル詳細
+
+### 8. login_attempts（ログイン試行記録）⭐⭐⭐
+
+**用途**: ログイン試行の記録とブルートフォース攻撃対策
+
+| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明・用途 |
+|---------|--------|-----|----------|------------|------------|
+| 試行ID | attempt_id | BIGINT AUTO_INCREMENT | NO (PK) | | 試行一意識別子 |
+| ユーザーID | user_id | VARCHAR(50) | YES | | 対象ユーザー（存在しない場合はNULL） |
+| メールアドレス | email | VARCHAR(255) | NO | | 試行されたメールアドレス |
+| 認証方式 | auth_method | ENUM | NO | | 認証方式（magic_link/password/2fa） |
+| IPアドレス | ip_address | VARCHAR(45) | NO | | アクセス元IP、レート制限用 |
+| 成功フラグ | success | BOOLEAN | NO | FALSE | 認証成功・失敗 |
+| 失敗理由 | failure_reason | ENUM | YES | | 失敗理由詳細 |
 | ユーザーエージェント | user_agent | VARCHAR(255) | YES | | ブラウザ情報 |
-| 作成日時 | created_at | DATETIME | NO | CURRENT_TIMESTAMP | |
-| 更新日時 | updated_at | DATETIME | NO | CURRENT_TIMESTAMP | |
+| 試行日時 | attempted_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 試行日時 |
 
 #### インデックス
-- **idx_sessions_user_id**: (user_id)
-- **idx_sessions_device_id**: (device_id)
-
-### 12. refresh_tokens（リフレッシュトークン管理）
-リフレッシュトークンの管理とセキュリティ制御用。明示的な失効管理とセキュリティ監査に使用。
-
-| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明 |
-|---------|--------|-----|----------|------------|------|
-| トークンID | token_id | VARCHAR(128) | NO (PK) | | トークン一意識別子 |
-| ユーザーID | user_id | VARCHAR(36) | NO | | ユーザー識別子 |
-| トークンハッシュ | refresh_token_hash | VARCHAR(512) | NO | | トークンのハッシュ値 |
-| デバイスID | device_id | VARCHAR(128) | NO | | 端末識別子 |
-| 発行日時 | issued_at | DATETIME | NO | | トークン発行日時 |
-| 有効期限 | expires_at | DATETIME | NO | | トークン有効期限 |
-| 失効フラグ | revoked | BOOLEAN | NO | FALSE | 失効状態 |
-| 失効理由 | revoked_reason | VARCHAR(100) | YES | | 失効理由 |
-| 作成日時 | created_at | DATETIME | NO | CURRENT_TIMESTAMP | |
-
-#### インデックス
-- **idx_refresh_tokens_user_id**: (user_id)
-
-### 13. security_events（セキュリティイベント）
-セキュリティ関連イベントの記録用。不正アクセスの検知、監査ログ、ユーザーサポート用。
-
-| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明 |
-|---------|--------|-----|----------|------------|------|
-| イベントID | event_id | BIGINT | NO (PK) | | イベント一意識別子 |
-| ユーザーID | user_id | VARCHAR(36) | NO | | ユーザー識別子 |
-| イベントタイプ | event_type | VARCHAR(50) | NO | | イベントの種類 |
-| ステータス | status | VARCHAR(20) | NO | | イベントの結果 |
-| IPアドレス | ip_address | VARCHAR(45) | NO | | アクセス元IP |
-| デバイス情報 | device_info | JSON | YES | | デバイスの詳細情報 |
-| 作成日時 | created_at | DATETIME | NO | CURRENT_TIMESTAMP | |
-
-#### インデックス
-- **idx_security_events_user_id**: (user_id)
-- **idx_security_events_created_at**: (created_at)
-
-### 14. login_attempts（ログイン試行）
-ログイン試行の記録と制限用。レート制限、ブルートフォース攻撃対策用。
-
-| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明 |
-|---------|--------|-----|----------|------------|------|
-| 試行ID | attempt_id | BIGINT | NO (PK) | | 試行一意識別子 |
-| ユーザーID | user_id | VARCHAR(36) | NO | | ユーザー識別子 |
-| IPアドレス | ip_address | VARCHAR(45) | NO | | アクセス元IP |
-| 試行日時 | attempt_time | DATETIME | NO | CURRENT_TIMESTAMP | 試行日時 |
-| 成功フラグ | success | BOOLEAN | NO | FALSE | 成功/失敗 |
-| 失敗理由 | failure_reason | VARCHAR(100) | YES | | 失敗の理由 |
-
-#### インデックス
-- **idx_login_attempts_user_id**: (user_id)
-- **idx_login_attempts_ip**: (ip_address)
-- **idx_login_attempts_time**: (attempt_time)
-
-### 15. two_factor_auth（2要素認証）
-2要素認証（2FA）の設定と管理用。TOTP方式での追加認証レイヤーを提供。
-
-| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明 |
-|---------|--------|-----|----------|------------|------|
-| ユーザーID | user_id | VARCHAR(36) | NO (PK) | | ユーザー識別子 |
-| 有効フラグ | enabled | BOOLEAN | NO | FALSE | 2FA有効/無効 |
-| 秘密鍵 | secret_key | VARCHAR(32) | NO | | TOTP用の秘密鍵（暗号化） |
-| バックアップコード | backup_codes | JSON | YES | | リカバリーコード（暗号化） |
-| 最終使用日時 | last_used | DATETIME | YES | | 最後に使用された日時 |
-| 作成日時 | created_at | DATETIME | NO | CURRENT_TIMESTAMP | |
-| 更新日時 | updated_at | DATETIME | NO | CURRENT_TIMESTAMP | |
-
-### 16. oauth_accounts（OAuth連携アカウント）
-将来的なGoogle/LINE/Apple等のOAuth認証連携用。現時点（2025-06）では未使用。
-
-| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明 |
-|---------|--------|-----|----------|------------|------|
-| OAuth ID | oauth_id | VARCHAR(128) | NO (PK) | | OAuth連携ID |
-| ユーザーID | user_id | VARCHAR(36) | NO | | ユーザー識別子 |
-| プロバイダー | provider | VARCHAR(20) | NO | | 認証プロバイダー名 |
-| プロバイダーユーザーID | provider_user_id | VARCHAR(255) | NO | | プロバイダー側のID |
-| アクセストークン | access_token | TEXT | YES | | プロバイダーのトークン |
-| リフレッシュトークン | refresh_token | TEXT | YES | | プロバイダーのリフレッシュトークン |
-| トークン有効期限 | token_expires_at | DATETIME | YES | | プロバイダートークンの有効期限 |
-| プロフィールデータ | profile_data | JSON | YES | | プロバイダーから取得した情報 |
-| 作成日時 | created_at | DATETIME | NO | CURRENT_TIMESTAMP | |
-| 更新日時 | updated_at | DATETIME | NO | CURRENT_TIMESTAMP | |
+- **INDEX**: user_id, email, ip_address, attempted_at
 
 ---
 
-## Magic Link認証フロー
+### 9. security_events（セキュリティイベント記録）⭐⭐⭐
 
-### 1. Magic Link認証の全体フロー
-```mermaid
-sequenceDiagram
-    participant U as ユーザー
-    participant C as クライアント
-    participant A as API
-    participant D as Database
-    participant E as Email
+**用途**: セキュリティ関連イベントの記録と監査
 
-    U->>C: メール入力 + CAPTCHA解答
-    C->>A: POST /auth/request-link
-    A->>D: CAPTCHA検証
-    A->>D: Magic Link生成・保存
-    A->>E: メール送信
-    E->>U: Magic Linkメール
-    U->>C: Magic Linkクリック
-    C->>A: GET /auth/verify
-    A->>D: トークン検証・使用済み化
-    A->>C: JWT返却
-    C->>U: ログイン完了
+| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明・用途 |
+|---------|--------|-----|----------|------------|------------|
+| イベントID | event_id | BIGINT AUTO_INCREMENT | NO (PK) | | イベント一意識別子 |
+| ユーザーID | user_id | VARCHAR(50) | YES | | 関連ユーザー（システムイベントはNULL） |
+| イベントタイプ | event_type | ENUM | NO | | イベント種別詳細 |
+| 重要度 | severity | ENUM | NO | 'info' | イベント重要度（low/medium/high/critical） |
+| IPアドレス | ip_address | VARCHAR(45) | YES | | 関連IPアドレス |
+| デバイス情報 | device_info | JSON | YES | | 端末詳細情報 |
+| イベント詳細 | event_details | JSON | YES | | 追加情報・コンテキスト |
+| 作成日時 | created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | イベント発生日時 |
+
+#### イベントタイプ一覧
+- `magic_link_issued`: Magic Link発行
+- `magic_link_used`: Magic Link使用
+- `login_success`: ログイン成功
+- `login_failed`: ログイン失敗
+- `password_set`: パスワード設定
+- `password_reset`: パスワードリセット
+- `session_revoked`: セッション失効
+- `token_rotated`: トークンローテーション
+- `2fa_enabled`: 2FA有効化
+- `2fa_disabled`: 2FA無効化
+- `suspicious_activity`: 不審なアクティビティ
+
+---
+
+## ゲーム機能テーブル詳細
+
+### 10. battle_results（バトル結果記録）⭐⭐⭐
+
+**用途**: じゃんけんバトルの結果記録と統計データ管理
+
+| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明・用途 |
+|---------|--------|-----|----------|------------|------------|
+| 戦闘番号 | fight_no | BIGINT AUTO_INCREMENT | NO | | 既存システム互換用、内部管理 |
+| バトルID | battle_id | VARCHAR(100) | NO (PK) | | バトル一意識別子、Redis連携用 |
+| プレイヤー1ID | player1_id | VARCHAR(50) | NO | | 参加者1のユーザーID |
+| プレイヤー2ID | player2_id | VARCHAR(50) | NO | | 参加者2のユーザーID |
+| 勝者ID | winner_id | VARCHAR(50) | YES | | 勝利者のユーザーID（引き分けはNULL） |
+| 総ラウンド数 | total_rounds | INT | NO | 0 | 実行されたラウンド数 |
+| プレイヤー1勝利数 | player1_wins | INT | NO | 0 | プレイヤー1の勝利ラウンド数 |
+| プレイヤー2勝利数 | player2_wins | INT | NO | 0 | プレイヤー2の勝利ラウンド数 |
+| 引き分け数 | draws | INT | NO | 0 | 引き分けラウンド数 |
+| バトル形式 | battle_type | ENUM | NO | 'standard' | バトル種別（standard/tournament/friend） |
+| 開始日時 | started_at | TIMESTAMP | YES | | バトル開始日時 |
+| 終了日時 | finished_at | TIMESTAMP | YES | | バトル終了日時 |
+| 作成日時 | created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | レコード作成日時 |
+
+#### 外部キー
+- **player1_id** → users(user_id) ON DELETE CASCADE
+- **player2_id** → users(user_id) ON DELETE CASCADE
+- **winner_id** → users(user_id) ON DELETE SET NULL
+
+---
+
+### 11. user_stats（ユーザー統計）⭐⭐⭐
+
+**用途**: ユーザーの対戦成績と統計情報管理
+
+| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明・用途 |
+|---------|--------|-----|----------|------------|------------|
+| ユーザーID | user_id | VARCHAR(50) | NO (PK) | | users.user_idとの紐付け |
+| 総試合数 | total_matches | INT | NO | 0 | 参加した総試合数 |
+| 総勝利数 | total_wins | INT | NO | 0 | 勝利した試合数 |
+| 総敗北数 | total_losses | INT | NO | 0 | 敗北した試合数 |
+| 総引き分け数 | total_draws | INT | NO | 0 | 引き分けた試合数 |
+| 勝率 | win_rate | DECIMAL(5,2) | NO | 0.00 | 勝率（％）、ランキング用 |
+| 現在連勝数 | current_streak | INT | NO | 0 | 現在の連勝記録 |
+| 最高連勝数 | best_streak | INT | NO | 0 | 過去最高の連勝記録 |
+| グー使用回数 | rock_count | INT | NO | 0 | グーを出した回数 |
+| パー使用回数 | paper_count | INT | NO | 0 | パーを出した回数 |
+| チョキ使用回数 | scissors_count | INT | NO | 0 | チョキを出した回数 |
+| お気に入りの手 | favorite_hand | ENUM | YES | | 最も多く使用する手 |
+| 直近戦績 | recent_results | VARCHAR(255) | NO | '' | 直近5戦の結果文字列 |
+| 当日勝利数 | daily_wins | INT | NO | 0 | 当日の勝利数（日次リセット） |
+| 当日敗北数 | daily_losses | INT | NO | 0 | 当日の敗北数（日次リセット） |
+| 当日引き分け数 | daily_draws | INT | NO | 0 | 当日の引き分け数（日次リセット） |
+| 称号 | title | VARCHAR(50) | NO | '' | 現在の表示称号 |
+| 獲得称号一覧 | available_titles | VARCHAR(255) | NO | '' | 獲得済み称号のCSV |
+| 二つ名 | alias | VARCHAR(50) | NO | '' | 現在の二つ名 |
+| 称号表示設定 | show_title | BOOLEAN | NO | TRUE | 称号の公開設定 |
+| 二つ名表示設定 | show_alias | BOOLEAN | NO | TRUE | 二つ名の公開設定 |
+| ユーザーランク | user_rank | ENUM | NO | 'no_rank' | ランク（no_rank/bronze/silver/gold/platinum/diamond） |
+| 最終リセット日 | last_reset_at | DATE | YES | | 日次統計リセット日 |
+| 最終対戦日時 | last_battle_at | TIMESTAMP | YES | | 最後に対戦した日時 |
+| 更新日時 | updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 統計更新日時 |
+
+#### インデックス
+- **INDEX**: win_rate DESC, total_matches DESC（ランキング用）
+- **INDEX**: user_rank, daily_wins DESC（デイリーランキング用）
+
+---
+
+## ビュー（仮想テーブル）一覧
+
+### 1. user_auth_summary（ユーザー認証サマリー）
+**用途**: ユーザーの認証設定状況を一覧表示
+
+```sql
+SELECT 
+    u.user_id,
+    u.email,
+    u.nickname,
+    ac.is_password_enabled,
+    tfa.enabled as two_factor_enabled,
+    COUNT(s.session_id) as active_sessions,
+    u.last_login_at
+FROM users u
+LEFT JOIN auth_credentials ac ON u.user_id = ac.user_id
+LEFT JOIN two_factor_auth tfa ON u.user_id = tfa.user_id
+LEFT JOIN sessions s ON u.user_id = s.user_id AND s.is_revoked = FALSE
 ```
 
-### 2. データベース操作の流れ
+### 2. today_rankings（今日のランキング）
+**用途**: 当日のユーザーランキング表示
 
-#### 新規ユーザー登録時
-1. `captcha_challenges`テーブルでCAPTCHA検証
-2. `rate_limits`テーブルでレート制限チェック
-3. `magic_links`テーブルにトークン作成
-4. メール送信後、ユーザーがリンククリック
-5. `magic_links`からトークン検証
-6. `users`テーブルに新規ユーザー作成
-7. `user_stats`テーブルに初期統計作成
-8. `sessions`テーブルにセッション作成
+```sql
+SELECT 
+    us.user_id,
+    u.nickname,
+    us.daily_wins,
+    us.daily_losses + us.daily_draws as daily_total,
+    CASE 
+        WHEN (us.daily_wins + us.daily_losses + us.daily_draws) = 0 THEN 0
+        ELSE ROUND(us.daily_wins * 100.0 / (us.daily_wins + us.daily_losses + us.daily_draws), 2)
+    END as daily_win_rate
+FROM user_stats us
+JOIN users u ON us.user_id = u.user_id
+WHERE us.daily_wins > 0
+ORDER BY daily_win_rate DESC, us.daily_wins DESC
+```
 
-#### 既存ユーザーログイン時
-1. `captcha_challenges`テーブルでCAPTCHA検証
-2. `rate_limits`テーブルでレート制限チェック
-3. `magic_links`テーブルにトークン作成
-4. メール送信後、ユーザーがリンククリック
-5. `magic_links`からトークン検証
-6. `users`テーブルから既存ユーザー取得
-7. `sessions`テーブルでセッション更新
+### 3. battle_history（バトル履歴）
+**用途**: バトル履歴の詳細表示
 
-### 3. セキュリティ機能
-
-#### レート制限
-- IP単位での同一エンドポイントへのアクセス制限
-- `rate_limits`テーブルで管理
-- 設定例：Magic Link要求は5分間に5回まで
-
-#### CAPTCHA検証
-- じゃんけんCAPTCHA + Google reCAPTCHA v2のダブル検証
-- `captcha_challenges`テーブルで問題と回答を管理
-- 署名付きトークンで改ざん防止
-
-#### トークン管理
-- Magic Linkトークンは15分で有効期限切れ
-- ワンタイム使用後は`used=true`で無効化
-- 定期的なクリーンアップ処理で期限切れデータ削除
+```sql
+SELECT 
+    br.battle_id,
+    p1.nickname as player1_nickname,
+    p2.nickname as player2_nickname,
+    COALESCE(winner.nickname, '引き分け') as result,
+    br.total_rounds,
+    br.started_at,
+    br.finished_at
+FROM battle_results br
+JOIN users p1 ON br.player1_id = p1.user_id
+JOIN users p2 ON br.player2_id = p2.user_id
+LEFT JOIN users winner ON br.winner_id = winner.user_id
+ORDER BY br.created_at DESC
+```
 
 ---
 
-## 運用・保守
+## インデックス設計
 
-### 定期メンテナンス
+### パフォーマンス重視の複合インデックス
+
+| テーブル | インデックス名 | カラム | 用途 |
+|---------|---------------|--------|------|
+| sessions | idx_sessions_user_device | (user_id, device_id) | ユーザー・端末別セッション検索 |
+| refresh_tokens | idx_refresh_tokens_session_expires | (session_id, expires_at) | セッション・期限別トークン検索 |
+| magic_link_tokens | idx_magic_link_email_expires | (email, expires_at) | メール・期限別トークン検索 |
+| security_events | idx_security_events_user_type | (user_id, event_type) | ユーザー・イベント種別検索 |
+| battle_results | idx_battle_results_players_created | (player1_id, player2_id, created_at) | プレイヤー・作成日別バトル検索 |
+| user_stats | idx_user_stats_win_rate_matches | (win_rate DESC, total_matches DESC) | 勝率・試合数別統計検索 |
+| login_attempts | idx_login_attempts_ip_time | (ip_address, attempt_time) | IP・時刻別ログイン試行検索 |
+
+---
+
+## データ保持・クリーンアップポリシー
+
+### 定期クリーンアップ（自動化推奨）
 
 #### 日次処理
-- 期限切れ`magic_links`レコードの削除
-- 期限切れ`captcha_challenges`レコードの削除
-- `rate_limits`テーブルの古いレコード削除
+```sql
+-- 期限切れMagic Linkトークンの削除
+DELETE FROM magic_link_tokens 
+WHERE expires_at < DATE_SUB(NOW(), INTERVAL 1 DAY);
+
+-- 期限切れリフレッシュトークンの削除
+DELETE FROM refresh_tokens 
+WHERE expires_at < NOW() AND is_revoked = TRUE;
+
+-- 古いJWTブラックリストエントリの削除
+DELETE FROM jwt_blacklist 
+WHERE expires_at < NOW();
+```
 
 #### 週次処理
-- セキュリティログの分析
-- 不正アクセス試行の監視
+```sql
+-- 古いログイン試行記録の削除（30日以上）
+DELETE FROM login_attempts 
+WHERE attempted_at < DATE_SUB(NOW(), INTERVAL 30 DAY);
+
+-- 非アクティブセッションの削除（7日以上アクセスなし）
+DELETE FROM sessions 
+WHERE last_seen_at < DATE_SUB(NOW(), INTERVAL 7 DAY);
+```
 
 #### 月次処理
-- ユーザー統計の集計
-- データベースのインデックス最適化
+```sql
+-- 古いセキュリティイベントの削除（6ヶ月以上）
+DELETE FROM security_events 
+WHERE created_at < DATE_SUB(NOW(), INTERVAL 6 MONTH);
 
-### バックアップ戦略
-- 日次：完全バックアップ
-- 時間毎：トランザクションログバックアップ
-- 認証関連テーブルは特に重要なため、追加の冗長化を実施
-
-### 監視項目
-- Magic Link生成エラー率
-- CAPTCHA失敗率
-- レート制限発動頻度
-- 異常なアクセスパターンの検知
+-- 古いアクティビティログの削除（3ヶ月以上）
+DELETE FROM activity_logs 
+WHERE created_at < DATE_SUB(NOW(), INTERVAL 3 MONTH);
+```
 
 ---
 
-## 重要な注意事項
+## セキュリティ設定
 
-### 1. profile_image_url と student_id_image_url
-- **NOT NULL制約**：これらのフィールドは`NOT NULL`です
-- デフォルト画像URLを設定する必要があります
-- 実際のシードデータでは以下のデフォルト値が使用されています：
-  - `profile_image_url`: `'https://lesson01.myou-kou.com/avatars/defaultAvatar[1-18].png'`
-  - `student_id_image_url`: `'https://lesson01.myou-kou.com/avatars/defaultStudentId.png'`
+### パスワード要件
+- **最小長**: 8文字以上
+- **文字種**: 英数字 + 特殊文字推奨
+- **ハッシュアルゴリズム**: Argon2id（デフォルト）
+- **ソルト**: 自動生成（Argon2idに内包）
 
-### 2. user_statsテーブル
-- `management_code`が主キーです
-- `user_id`フィールドも存在しますが、これは参照用です
-- JOINクエリでは`users.management_code = user_stats.management_code`を使用します
+### レート制限設定
+| エンドポイント | 制限 | 窓時間 |
+|---------------|------|--------|
+| Magic Link要求 | 5回 | 5分間 |
+| ログイン試行 | 10回 | 15分間 |
+| パスワードリセット | 3回 | 30分間 |
+| 2FA検証 | 5回 | 10分間 |
 
-### 3. 文字エンコーディング
-- 全テーブルで`ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`が設定されています
-
-### 4. Magic Link認証でのユーザー作成
-- 新規ユーザーは`register_type='magic_link'`で作成
-- `email`フィールドは必須かつユニーク制約
-- `password`フィールドは使用しないためNULL許可
-- 初期統計データも自動作成される
-
-### 5. セキュリティ考慮事項
-- トークンは全てハッシュ化して保存
-- 個人情報の暗号化（特に2FA関連）
-- 適切なインデックス設計によるパフォーマンス確保
-- レート制限によるDDoS攻撃対策
+### セッション管理
+- **アクセストークン有効期限**: 15分
+- **リフレッシュトークン有効期限**: 30日
+- **同時ログイン端末数**: 5台まで（設定可能）
+- **非アクティブセッションタイムアウト**: 7日
 
 ---
 
-## 実際のデータ例
-シードファイルから確認できる実際のデータパターン：
-- `title`: 'title_001', 'title_002', 'title_003', 'title_004', 'title_005'
-- `available_titles`: CSVフォーマット（例: 'title_004,title_003,title_004'）
-- `recent_hand_results_str`: フォーマット例 'P:D,G:W,P:L,S:W,P:L'
-- `user_rank`: 'no_rank', 'bronze', 'silver', 'gold'
-- `favorite_hand`: 'rock', 'scissors', 'paper'
+## Redis連携設計
+
+### Redisで管理されるデータ
+
+#### セッション関連
+```redis
+# セッション情報（TTL: アクセストークンと同期）
+SET session:{session_id} '{"user_id":"user_123","device_id":"device_abc","last_seen":"2024-01-01T12:00:00Z"}' EX 900
+
+# WebSocket接続状態
+SET websocket:user:{user_id} '{"session_id":"session_123","socket_id":"socket_789"}' EX 3600
+```
+
+#### レート制限
+```redis
+# Magic Link送信制限
+SET ratelimit:magiclink:{email} 1 EX 300
+
+# ログイン試行制限
+INCR ratelimit:login:{ip_address} EX 900
+```
+
+#### ゲーム関連
+```redis
+# マッチングキュー
+LPUSH matching_queue "{user_id}"
+
+# リアルタイムバトル状態
+HSET battle:{battle_id} "status" "active" "round" "2"
+```
 
 ---
+
+## 既存システムとの互換性
+
+### レガシーデータマッピング
+
+| 旧フィールド | 新フィールド | 変換方法 |
+|-------------|-------------|----------|
+| users.management_code | users.management_code | 直接マッピング |
+| users.password | auth_credentials.password_hash | ハッシュ変換が必要 |
+| users.profile_image_url | user_profiles.profile_image_url | 直接マッピング |
+| users.student_id_image_url | user_profiles.student_id_image_url | 直接マッピング |
+| match_history.fight_no | battle_results.fight_no | 直接マッピング |
+
+### 移行時の注意点
+1. **パスワードの再ハッシュ化**: 既存のハッシュアルゴリズムからArgon2idへの移行
+2. **プロフィール画像URL**: デフォルト画像の設定とNOT NULL制約への対応
+3. **統計データの整合性**: user_statsテーブルの既存データとの整合性確保
+
+---
+
+## トラブルシューティング
+
+### よくある問題と対処法
+
+#### 1. Magic Linkが届かない
+- `magic_link_tokens`テーブルでトークン生成を確認
+- `security_events`テーブルで送信ログを確認
+- レート制限（Redis）の状況確認
+
+#### 2. セッションが無効になる
+- `sessions`テーブルの`is_revoked`フラグ確認
+- `refresh_tokens`テーブルの有効期限確認
+- Redis内のセッションキャッシュ状況確認
+
+#### 3. ログインできない
+- `login_attempts`テーブルで試行履歴確認
+- `security_events`テーブルでエラー詳細確認
+- アカウント状態（`users.is_active`）確認
+
+### 監視すべきメトリクス
+- **アクティブセッション数**: `SELECT COUNT(*) FROM sessions WHERE is_revoked = FALSE`
+- **Magic Link使用率**: security_eventsの成功率
+- **異常ログイン**: 複数地点からの短時間アクセス
+- **レート制限発動回数**: Redis内のレート制限カウンタ
+
+---
+
+**作成日**: 2024年12月  
+**バージョン**: 1.0  
+**対応システム**: Magic Link + JWT + パスワード（任意）認証システム  
+**データベース**: MySQL 8.0+  
+**文字エンコーディング**: utf8mb4_unicode_ci

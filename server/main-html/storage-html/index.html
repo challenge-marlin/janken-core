@@ -10,6 +10,9 @@
     <div class="container">
         <header>
             <h1>ストレージ管理</h1>
+            <div style="background: rgba(102, 126, 234, 0.1); padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 14px;">
+                <strong>🆕 Laravel風設計対応:</strong> 統一ストレージAPI、MinIO/S3抽象化、型安全ファイル管理
+            </div>
             <div class="header-actions">
                 <a href="storage-test.html" class="nav-link">テストページ</a>
                 <a href="/monitor/" class="nav-link">システム監視</a>
@@ -20,7 +23,7 @@
 
         <main>
             <div class="external-links">
-                <a href="http://192.168.100.10:9000/" target="_blank" class="external-link">MinIO管理画面</a>
+                <a href="http://192.168.0.155:9000/" target="_blank" class="external-link">MinIO管理画面</a>
             </div>
 
             <section class="storage-stats">
@@ -34,6 +37,9 @@
                         <div class="stat-item">
                             <span class="label">総容量:</span>
                             <span id="profileImagesSize" class="value">-</span>
+                        </div>
+                        <div class="api-info" style="font-size: 11px; color: #666; margin-top: 5px;">
+                            🔗 新API: /storage/stats/profile-images
                         </div>
                     </div>
                 </div>
@@ -49,6 +55,9 @@
                             <span class="label">総容量:</span>
                             <span id="studentIdsSize" class="value">-</span>
                         </div>
+                        <div class="api-info" style="font-size: 11px; color: #666; margin-top: 5px;">
+                            📋 新API: /storage/stats/student-ids
+                        </div>
                     </div>
                 </div>
 
@@ -63,9 +72,22 @@
                             <span class="label">総容量:</span>
                             <span id="tempUploadsSize" class="value">-</span>
                         </div>
+                        <div class="api-info" style="font-size: 11px; color: #666; margin-top: 5px;">
+                            🗃️ 新API: /storage/stats/temp-uploads
+                        </div>
                     </div>
                 </div>
             </section>
+            
+            <div style="margin: 15px 0; padding: 10px; background: #f0f2ff; border-radius: 5px; font-size: 13px;">
+                <strong>💡 Laravel風新機能:</strong> 
+                <ul style="margin: 5px 0; padding-left: 20px;">
+                    <li>Storage Repository による統一ファイル管理</li>
+                    <li>MinIO/S3の抽象化レイヤー</li>
+                    <li>型安全なファイルメタデータ処理</li>
+                    <li>プロキシエンドポイントのセキュリティ強化</li>
+                </ul>
+            </div>
 
             <section class="file-management">
                 <div class="bucket-selector">

@@ -25,8 +25,9 @@ from .schemas import (
     BattleQuitConfirmedResponse, OpponentQuitResponse,
     ErrorResponse, OpponentInfo, PlayerInfo, BattleResult
 )
-from .database_service import battle_db_service
-from ...shared.database.models_improved import ConnectionStatus
+# DB接続を削除
+# from .database_service import battle_db_service
+# from ...shared.database.models_improved import ConnectionStatus
 
 
 class BattleWebSocketService:
@@ -36,32 +37,28 @@ class BattleWebSocketService:
         self.manager = manager
     
     async def connect_user(self, websocket: WebSocket, user_id: str) -> bool:
-        """ユーザー接続処理（DB連携版）"""
+        """ユーザー接続処理（DB接続なし版）"""
         try:
             await websocket.accept()
             
-            # DB連携: ユーザー情報の検証
-            user_info = await battle_db_service.get_user_info(user_id)
+            # DB接続なし: JWTから取得したユーザー情報を使用
+            # テストユーザーの情報をハードコーディングで対応
+            user_info = self._get_test_user_info(user_id)
             if not user_info:
-                await websocket.close(code=4001, reason="User not found or banned")
+                await websocket.close(code=4001, reason="User not found")
                 return False
             
             # メモリ管理に追加
             self.manager.add_connection(user_id, websocket)
             
-            # DB連携: WebSocket接続を登録
+            # DB接続なし: 接続IDを生成
             connection_id = f"ws_{user_id}_{int(datetime.now().timestamp())}"
-            await battle_db_service.register_websocket_connection(
-                connection_id=connection_id,
-                user_id=user_id,
-                ip_address="127.0.0.1"  # TODO: 実際のIPアドレス取得
-            )
             
             # 接続確立メッセージ送信
             response = ConnectionEstablishedResponse(
                 data={
                     "userId": user_id,
-                    "nickname": user_info.nickname,
+                    "nickname": user_info["nickname"],
                     "sessionId": connection_id,
                     "status": "connected"
                 }
@@ -73,17 +70,47 @@ class BattleWebSocketService:
             print(f"Error connecting user {user_id}: {e}")
             return False
     
+    def _get_test_user_info(self, user_id: str) -> Optional[Dict[str, str]]:
+        """テストユーザー情報を取得（DB接続なし）"""
+        # テストユーザーの情報をハードコーディング
+        test_users = {
+            "test_user_1": {
+                "nickname": "テストユーザー1",
+                "profile_image_url": "https://lesson01.myou-kou.com/avatars/defaultAvatar1.png"
+            },
+            "test_user_2": {
+                "nickname": "テストユーザー2", 
+                "profile_image_url": "https://lesson01.myou-kou.com/avatars/defaultAvatar2.png"
+            },
+            "test_user_3": {
+                "nickname": "テストユーザー3",
+                "profile_image_url": "https://lesson01.myou-kou.com/avatars/defaultAvatar3.png"
+            },
+            "test_user_4": {
+                "nickname": "テストユーザー4",
+                "profile_image_url": "https://lesson01.myou-kou.com/avatars/defaultAvatar4.png"
+            },
+            "test_user_5": {
+                "nickname": "テストユーザー5",
+                "profile_image_url": "https://lesson01.myou-kou.com/avatars/defaultAvatar5.png"
+            },
+            # シンプル開発ログイン用
+            "dev_test": {
+                "nickname": "開発者_test",
+                "profile_image_url": "https://lesson01.myou-kou.com/avatars/defaultAvatar1.png"
+            }
+        }
+        return test_users.get(user_id)
+    
     async def disconnect_user(self, user_id: str):
-        """ユーザー切断処理（DB連携版）"""
+        """ユーザー切断処理（DB接続なし版）"""
         try:
             # バトル中の場合は辞退処理
             battle = self.manager.get_user_battle(user_id)
             if battle:
                 await self.handle_battle_quit(user_id, battle.battle_id, "connection_lost")
             
-            # DB連携: WebSocket接続を削除
-            await battle_db_service.unregister_websocket_connection(user_id)
-            
+            # DB接続なし: WebSocket接続削除はメモリ管理のみ
             # メモリ管理から削除
             self.manager.remove_connection(user_id)
             
@@ -104,20 +131,17 @@ class BattleWebSocketService:
     
     async def send_error(self, user_id: str, error_code: ErrorCode, message: str, original_data: Dict = None):
         """エラーメッセージ送信"""
-        error_response = ErrorResponse(
-            data={
-                "originalType": original_data.get("type") if original_data else None,
-                "originalData": original_data or {}
-            },
+        response = ErrorResponse(
             error={
-                "code": error_code.value,
-                "message": message
+                "code": error_code,
+                "message": message,
+                "originalData": original_data
             }
         )
-        await self.send_message(user_id, error_response.dict())
+        await self.send_message(user_id, response.dict())
     
     async def handle_matching_start(self, user_id: str, data: Dict[str, Any]) -> bool:
-        """マッチング開始処理"""
+        """マッチング開始処理（DB接続なし版）"""
         try:
             # 既にバトル中またはマッチング中の場合はエラー
             if user_id in self.manager.user_battles or user_id in self.manager.matching_queue:
@@ -129,8 +153,8 @@ class BattleWebSocketService:
                 )
                 return False
             
-            # DB連携: 実際のユーザー情報を取得
-            user_info = await battle_db_service.get_user_info(user_id)
+            # DB接続なし: テストユーザー情報を取得
+            user_info = self._get_test_user_info(user_id)
             if not user_info:
                 await self.send_error(
                     user_id, 
@@ -142,16 +166,13 @@ class BattleWebSocketService:
             # プレイヤー情報を作成
             player = BattlePlayer(
                 user_id=user_id,
-                nickname=user_info.nickname,
-                profile_image_url=user_info.profile_image_url,
+                nickname=user_info["nickname"],
+                profile_image_url=user_info["profile_image_url"],
                 connection_id=user_id,
                 connected_at=datetime.now()
             )
             
-            # DB連携: 接続状態を更新
-            await battle_db_service.update_connection_status(
-                user_id, ConnectionStatus.in_queue
-            )
+            # DB接続なし: 接続状態更新はスキップ
             
             # マッチングキューに追加
             matching = self.manager.add_to_matching_queue(user_id, player)
@@ -190,17 +211,17 @@ class BattleWebSocketService:
                 battle, opponent = match_result
                 
                 # DB連携: バトルセッションを作成
-                await battle_db_service.create_battle_session(
-                    battle.player1, battle.player2, battle.battle_id
-                )
+                # await battle_db_service.create_battle_session(
+                #     battle.player1, battle.player2, battle.battle_id
+                # )
                 
                 # DB連携: 両プレイヤーの接続状態を更新
-                await battle_db_service.update_connection_status(
-                    battle.player1.user_id, ConnectionStatus.in_battle, battle.battle_id
-                )
-                await battle_db_service.update_connection_status(
-                    battle.player2.user_id, ConnectionStatus.in_battle, battle.battle_id
-                )
+                # await battle_db_service.update_connection_status(
+                #     battle.player1.user_id, ConnectionStatus.in_battle, battle.battle_id
+                # )
+                # await battle_db_service.update_connection_status(
+                #     battle.player2.user_id, ConnectionStatus.in_battle, battle.battle_id
+                # )
                 
                 # 両プレイヤーにマッチング成立通知
                 for player in [battle.player1, battle.player2]:
@@ -268,12 +289,12 @@ class BattleWebSocketService:
             battle.status = BattleStatus.preparing
             
             # DB連携: 準備状態を更新
-            player1_ready = battle.player1.is_ready if battle.player1 else False
-            player2_ready = battle.player2.is_ready if battle.player2 else False
+            # player1_ready = battle.player1.is_ready if battle.player1 else False
+            # player2_ready = battle.player2.is_ready if battle.player2 else False
             
-            await battle_db_service.update_battle_status(
-                battle_id, BattleStatus.preparing, player1_ready, player2_ready
-            )
+            # await battle_db_service.update_battle_status(
+            #     battle_id, BattleStatus.preparing, player1_ready, player2_ready
+            # )
             
             # 準備状態を両プレイヤーに通知
             for p in [battle.player1, battle.player2]:
@@ -310,7 +331,7 @@ class BattleWebSocketService:
             battle.started_at = datetime.now()
             
             # DB連携: バトル開始状態を更新
-            await battle_db_service.update_battle_status(battle_id, BattleStatus.ready)
+            # await battle_db_service.update_battle_status(battle_id, BattleStatus.ready)
             
             # 両プレイヤーにバトル開始通知
             for player in [battle.player1, battle.player2]:
@@ -363,7 +384,7 @@ class BattleWebSocketService:
             battle.status = BattleStatus.hand_submitted
             
             # DB連携: 手をDBに記録
-            await battle_db_service.submit_hand(battle_id, user_id, hand)
+            # await battle_db_service.submit_hand(battle_id, user_id, hand)
             
             # 手送信確認
             response = HandSubmittedResponse(
@@ -434,7 +455,7 @@ class BattleWebSocketService:
                         await self.send_message(player.user_id, response.dict())
                 
                 # DB連携: 手をリセット
-                await battle_db_service.reset_hands(battle_id)
+                # await battle_db_service.reset_hands(battle_id)
                 
                 # 手をリセット
                 battle.reset_hands()
@@ -446,12 +467,12 @@ class BattleWebSocketService:
                 
                 # DB連携: 対戦結果を保存
                 duration_seconds = int((datetime.now() - battle.started_at).total_seconds()) if battle.started_at else 60
-                await battle_db_service.save_match_result(
-                    battle_id, player1_result, player2_result, winner, duration_seconds
-                )
+                # await battle_db_service.save_match_result(
+                #     battle_id, player1_result, player2_result, winner, duration_seconds
+                # )
                 
                 # DB連携: バトル完了状態を更新
-                await battle_db_service.update_battle_status(battle_id, BattleStatus.finished)
+                # await battle_db_service.update_battle_status(battle_id, BattleStatus.finished)
                 
                 # 勝敗結果通知
                 for player in [battle.player1, battle.player2]:
@@ -486,7 +507,7 @@ class BattleWebSocketService:
                 return False
             
             # DB連携: 手をリセット
-            await battle_db_service.reset_hands(battle_id)
+            # await battle_db_service.reset_hands(battle_id)
             
             # 手をリセット
             battle.reset_hands()
@@ -520,7 +541,7 @@ class BattleWebSocketService:
             battle.status = BattleStatus.cancelled
             
             # DB連携: バトルキャンセル状態を更新
-            await battle_db_service.update_battle_status(battle_id, BattleStatus.cancelled)
+            # await battle_db_service.update_battle_status(battle_id, BattleStatus.cancelled)
             
             # 辞退確認を本人に送信
             quit_response = BattleQuitConfirmedResponse(
