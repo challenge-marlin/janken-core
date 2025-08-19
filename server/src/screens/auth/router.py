@@ -16,6 +16,7 @@ from .schemas import (
     TestLoginRequest,
     DevLoginRequest,
     UserInfoLoginRequest,
+    DBLoginRequest,
     AuthResponse,
     LoginSuccessResponse,
     MagicLinkResponse
@@ -387,6 +388,44 @@ async def test_login(
             message="テストユーザーログインに失敗しました",
             error={
                 "code": "TEST_LOGIN_ERROR", 
+                "details": str(e)
+            }
+        )
+
+@router.post("/db-login", response_model=AuthResponse)
+async def db_login(
+    request: DBLoginRequest,
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """
+    DBありきログイン - Laravel風: AuthController@dbLogin
+    
+    データベースに保存されたユーザー認証情報を使用したログイン機能
+    
+    Args:
+        request: DBログインリクエスト
+        auth_service: 認証サービス（DI）
+    
+    Returns:
+        認証レスポンス
+    """
+    try:
+        # サービス層に処理を委譲
+        result = await auth_service.login_with_db_credentials(
+            email=request.email,
+            password=request.password
+        )
+        
+        return AuthResponse(
+            success=True,
+            data=result
+        )
+    except Exception as e:
+        return AuthResponse(
+            success=False,
+            message="DBログインに失敗しました",
+            error={
+                "code": "DB_LOGIN_ERROR", 
                 "details": str(e)
             }
         ) 

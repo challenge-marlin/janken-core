@@ -6,7 +6,7 @@ Magic Link認証機能用のデータベースモデル
 
 from datetime import datetime, timedelta
 from typing import Optional
-from sqlalchemy import Column, String, DateTime, Boolean, Integer, Text, JSON, DECIMAL, ForeignKey, Index, Enum, Date, BIGINT
+from sqlalchemy import Column, String, DateTime, Boolean, Integer, Text, JSON, DECIMAL, ForeignKey, Index, Enum, Date, BIGINT, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 import uuid
@@ -19,24 +19,19 @@ class User(Base):
     """ユーザー情報テーブル"""
     __tablename__ = "users"
     
-    management_code = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(String(36), nullable=False, unique=True, index=True)
+    management_code = Column(Integer, autoincrement=True, unique=True, index=True)
+    user_id = Column(String(50), primary_key=True)
     email = Column(String(255), nullable=False, unique=True, index=True)  # Magic Link認証で必須
-    password = Column(String(255), nullable=True)  # Magic Link認証では未使用
+    nickname = Column(String(100), nullable=False)
     name = Column(String(50), nullable=True)
-    nickname = Column(String(50), nullable=False)
-    postal_code = Column(String(10), nullable=True)
-    address = Column(String(255), nullable=True)
-    phone_number = Column(String(15), nullable=True)
-    university = Column(String(100), nullable=True)
-    birthdate = Column(DateTime, nullable=True)
-    profile_image_url = Column(String(255), nullable=False, default='https://lesson01.myou-kou.com/avatars/defaultAvatar1.png')
-    student_id_image_url = Column(String(255), nullable=False, default='https://lesson01.myou-kou.com/avatars/defaultStudentId.png')
+    role = Column(String(20), nullable=False, default='user')
+    profile_image_url = Column(String(500), nullable=True)
+    title = Column(String(100), nullable=True, default='じゃんけんプレイヤー')
+    alias = Column(String(100), nullable=True)
+    is_active = Column(Boolean, default=True)
+    is_banned = Column(Integer, default=0)  # 0:未設定、1:設定、2:復帰
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    register_type = Column(String(20), default="magic_link")  # magic_link / google / line / apple
-    is_student_id_editable = Column(Boolean, default=False)
-    is_banned = Column(Integer, default=0)  # 0:未設定、1:設定、2:復帰
     
     # リレーションシップ
     magic_links = relationship("MagicLink", back_populates="user")
@@ -53,7 +48,7 @@ class MagicLink(Base):
     token_id = Column(String(128), primary_key=True)
     email = Column(String(255), nullable=False, index=True)
     token_hash = Column(String(512), nullable=False)
-    user_id = Column(String(36), ForeignKey("users.user_id"), nullable=True)
+    user_id = Column(String(50), ForeignKey("users.user_id"), nullable=True)
     expires_at = Column(DateTime, nullable=False, index=True)
     used_at = Column(DateTime, nullable=True, index=True)
     ip_address = Column(String(45), nullable=False)
@@ -148,7 +143,7 @@ class Session(Base):
     __tablename__ = "sessions"
     
     session_id = Column(String(128), primary_key=True)
-    user_id = Column(String(36), ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(String(50), ForeignKey("users.user_id"), nullable=False)
     access_token = Column(String(512), nullable=False)
     refresh_token = Column(String(512), nullable=False)
     device_id = Column(String(128), nullable=False)
@@ -178,7 +173,7 @@ class SecurityEvent(Base):
     __tablename__ = "security_events"
     
     event_id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(String(36), ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(String(50), ForeignKey("users.user_id"), nullable=False)
     event_type = Column(String(50), nullable=False)
     status = Column(String(20), nullable=False)
     ip_address = Column(String(45), nullable=False)
@@ -194,7 +189,7 @@ class LoginAttempt(Base):
     __tablename__ = "login_attempts"
     
     attempt_id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(String(36), ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(String(50), ForeignKey("users.user_id"), nullable=False)
     ip_address = Column(String(45), nullable=False, index=True)
     attempt_time = Column(DateTime, default=datetime.utcnow, index=True)
     success = Column(Boolean, default=False)
@@ -208,26 +203,30 @@ class UserStats(Base):
     """ユーザー統計テーブル"""
     __tablename__ = "user_stats"
     
-    management_code = Column(Integer, ForeignKey("users.management_code"), primary_key=True)
-    user_id = Column(String(36), nullable=False)
+    user_id = Column(String(50), ForeignKey("users.user_id"), primary_key=True)
+    total_matches = Column(Integer, default=0)
     total_wins = Column(Integer, default=0)
-    current_win_streak = Column(Integer, default=0)
-    max_win_streak = Column(Integer, default=0)
-    hand_stats_rock = Column(Integer, default=0)
-    hand_stats_scissors = Column(Integer, default=0)
-    hand_stats_paper = Column(Integer, default=0)
+    total_losses = Column(Integer, default=0)
+    total_draws = Column(Integer, default=0)
+    win_rate = Column(DECIMAL(5, 2), default=0.00)
+    current_streak = Column(Integer, default=0)
+    best_streak = Column(Integer, default=0)
+    total_rounds_played = Column(Integer, default=0)
+    rock_count = Column(Integer, default=0)
+    paper_count = Column(Integer, default=0)
+    scissors_count = Column(Integer, default=0)
     favorite_hand = Column(String(10), nullable=True)
     recent_hand_results_str = Column(String(255), default='')
-    daily_wins = Column(Integer, default=0)
-    daily_losses = Column(Integer, default=0)
-    daily_draws = Column(Integer, default=0)
+    average_battle_duration_seconds = Column(Integer, default=0)
+    last_battle_at = Column(DateTime, nullable=True)
     title = Column(String(50), default='')
     available_titles = Column(String(255), default='')
     alias = Column(String(50), default='')
     show_title = Column(Boolean, default=True)
     show_alias = Column(Boolean, default=True)
     user_rank = Column(String(20), default='no_rank')
-    last_reset_at = Column(DateTime, nullable=True)
+    last_reset_at = Column(Date, nullable=False, default=func.current_date())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
     # リレーションシップ
     user = relationship("User", back_populates="stats")
@@ -412,7 +411,7 @@ class RefreshTokens(Base):
     __tablename__ = "refresh_tokens"
     
     token_id = Column(String(128), primary_key=True)
-    user_id = Column(String(36), ForeignKey("users.user_id"), nullable=False, index=True)
+    user_id = Column(String(50), ForeignKey("users.user_id"), nullable=False, index=True)
     refresh_token_hash = Column(String(512), nullable=False)
     device_id = Column(String(128), nullable=False)
     issued_at = Column(DateTime, nullable=False)
@@ -427,7 +426,7 @@ class OAuthAccounts(Base):
     __tablename__ = "oauth_accounts"
     
     oauth_id = Column(String(128), primary_key=True)
-    user_id = Column(String(36), ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(String(50), ForeignKey("users.user_id"), nullable=False)
     provider = Column(String(20), nullable=False)
     provider_user_id = Column(String(255), nullable=False)
     access_token = Column(Text, nullable=True)
@@ -442,10 +441,37 @@ class TwoFactorAuth(Base):
     """2要素認証設定テーブル"""
     __tablename__ = "two_factor_auth"
     
-    user_id = Column(String(36), ForeignKey("users.user_id"), primary_key=True)
+    user_id = Column(String(50), ForeignKey("users.user_id"), primary_key=True)
     enabled = Column(Boolean, nullable=False, default=False)
     secret_key = Column(String(32), nullable=False)
     backup_codes = Column(JSON, nullable=True)
     last_used = Column(DateTime, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow) 
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+
+class AuthCredentials(Base):
+    """認証資格情報テーブル"""
+    __tablename__ = "auth_credentials"
+    
+    user_id = Column(String(50), ForeignKey("users.user_id"), primary_key=True)
+    password_hash = Column(String(255), nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class UserProfile(Base):
+    """ユーザープロフィールテーブル"""
+    __tablename__ = "user_profiles"
+    
+    user_id = Column(String(50), ForeignKey("users.user_id"), primary_key=True)
+    postal_code = Column(String(10), nullable=True)
+    address = Column(String(255), nullable=True)
+    phone_number = Column(String(15), nullable=True)
+    university = Column(String(100), nullable=True)
+    birthdate = Column(Date, nullable=True)
+    student_id_image_url = Column(String(500), nullable=True)
+    is_student_id_editable = Column(Boolean, nullable=True, default=False)
+    register_type = Column(String(20), nullable=True, default="email")
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow) 

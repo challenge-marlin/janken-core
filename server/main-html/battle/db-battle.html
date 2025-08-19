@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 じゃんけんバトル - DBありきテスト</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .db-info {
+            background: rgba(40, 167, 69, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
+        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 193, 7, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            border: 2px solid #dee2e6;
+        }
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 5px;
+        }
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        .battle-history {
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .battle-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .battle-item:last-child {
+            border-bottom: none;
+        }
+        .battle-result {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .result-win { background: #d4edda; color: #155724; }
+        .result-lose { background: #f8d7da; color: #721c24; }
+        .result-draw { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 じゃんけんバトル - DBありきテスト</h1>
+            <div class="db-info">
+                <strong>🆕 DBありき認証・バトルシステム:</strong> 
+                パスワード認証、ユーザープロフィール、統計データ、バトル履歴の完全DB連携
+            </div>
+            <div class="user-info" id="userInfo">
+                <span id="userDisplay">未ログイン</span>
+                <button id="logoutBtn" class="btn btn-secondary" style="display: none;">ログアウト</button>
+            </div>
+        </header>
+
+        <!-- ログイン画面 -->
+        <div id="loginSection" class="section">
+            <h2>🔐 DBありきログイン</h2>
+            <div class="login-options">
+                <div class="login-method">
+                    <h3>パスワード認証（DB連携）</h3>
+                    <div class="password-login">
+                        <select id="dbUserSelect">
+                            <option value="">テストユーザーを選択</option>
+                            <option value="test_user_1">じゃんけんマスター (test1@example.com)</option>
+                            <option value="test_user_2">バトルクイーン (test2@example.com)</option>
+                            <option value="test_user_3">勝負師 (test3@example.com)</option>
+                            <option value="test_user_4">新米戦士 (test4@example.com)</option>
+                            <option value="test_user_5">伝説のプレイヤー (test5@example.com)</option>
+                        </select>
+                        <input type="password" id="passwordInput" placeholder="パスワード" value="password123">
+                        <button id="dbLoginBtn" class="btn btn-primary">DB認証でログイン</button>
+                    </div>
+                    <div style="margin-top: 10px; padding: 8px; background: #e8f5e8; border-radius: 3px; font-size: 12px;">
+                        💡 新機能: パスワードハッシュ認証、ユーザープロフィール、統計データの完全DB連携
+                    </div>
+                    <div style="margin-top: 10px; padding: 8px; background: #fff3cd; border-radius: 3px; font-size: 12px;">
+                        🔑 テスト用パスワード: password123（全ユーザー共通）
+                    </div>
+                </div>
+                
+                <div class="login-method">
+                    <h3>Magic Link認証（DB連携）</h3>
+                    <div class="magic-login">
+                        <input type="email" id="emailInput" placeholder="メールアドレス" value="test1@example.com">
+                        <button id="magicLinkBtn" class="btn btn-primary">Magic Link送信</button>
+                    </div>
+                    <div style="margin-top: 10px; padding: 8px; background: #e3f2fd; border-radius: 3px; font-size: 12px;">
+                        🔗 新機能: DB連携Magic Link、セッション管理、セキュリティ強化
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ユーザープロフィール表示 -->
+        <div id="userProfileSection" class="section" style="display: none;">
+            <h2>👤 ユーザープロフィール</h2>
+            <div class="user-profile">
+                <div class="profile-avatar" id="profileAvatar">👤</div>
+                <div class="profile-details">
+                    <h3 id="profileNickname">-</h3>
+                    <p>ID: <span id="profileUserId">-</span></p>
+                    <p>レベル: <span id="profileLevel">-</span> | 経験値: <span id="profileExperience">-</span></p>
+                    <p>称号: <span id="profileTitle">-</span></p>
+                </div>
+            </div>
+            
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="statTotalBattles">0</div>
+                    <div class="stat-label">総バトル数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statWins">0</div>
+                    <div class="stat-label">勝利数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statLosses">0</div>
+                    <div class="stat-label">敗北数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statWinRate">0%</div>
+                    <div class="stat-label">勝率</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statCurrentStreak">0</div>
+                    <div class="stat-label">現在の連勝</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statBestStreak">0</div>
+                    <div class="stat-label">最高連勝</div>
+                </div>
+            </div>
+            
+            <div class="battle-history">
+                <h4>📊 最近のバトル履歴</h4>
+                <div id="battleHistoryList">
+                    <p style="text-align: center; color: #6c757d;">バトル履歴がありません</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- バトル画面 -->
+        <div id="battleSection" class="section" style="display: none;">
+            <!-- 接続状態 -->
+            <div class="connection-status">
+                <div class="status-indicator" id="connectionStatus">
+                    <span class="status-dot offline"></span>
+                    <span id="statusText">未接続</span>
+                </div>
+                <button id="connectBtn" class="btn btn-primary">接続</button>
+                <button id="disconnectBtn" class="btn btn-secondary" style="display: none;">切断</button>
+            </div>
+
+            <!-- 対戦状態表示 -->
+            <div class="battle-status" id="battleStatus">
+                <h2 id="statusTitle">対戦待機中</h2>
+                <p id="statusMessage">WebSocketに接続してマッチングを開始してください</p>
+            </div>
+
+            <!-- マッチング情報 -->
+            <div id="matchingInfo" class="info-box" style="display: none;">
+                <h3>🔍 マッチング中...</h3>
+                <p>キュー位置: <span id="queuePosition">-</span></p>
+                <p>推定待ち時間: <span id="estimatedWait">-</span>秒</p>
+                <button id="cancelMatchingBtn" class="btn btn-danger">マッチングキャンセル</button>
+            </div>
+
+            <!-- 対戦相手情報 -->
+            <div id="opponentInfo" class="info-box" style="display: none;">
+                <h3>👤 対戦相手</h3>
+                <div class="opponent-display">
+                    <div id="opponentAvatar" class="avatar">👤</div>
+                    <div class="opponent-details">
+                        <p><strong id="opponentName">-</strong></p>
+                        <p>ID: <span id="opponentId">-</span></p>
+                        <p>レベル: <span id="opponentLevel">-</span></p>
+                    </div>
+                </div>
+                <button id="readyBtn" class="btn btn-success" style="display: none;">準備完了</button>
+            </div>
+
+            <!-- 手選択エリア -->
+            <div id="handSelection" class="hand-selection" style="display: none;">
+                <h3>✋ 手を選択してください</h3>
+                <div class="hands">
+                    <button class="hand-btn" data-hand="rock">
+                        <span class="hand-emoji">✊</span>
+                        <span class="hand-name">グー</span>
+                    </button>
+                    <button class="hand-btn" data-hand="scissors">
+                        <span class="hand-emoji">✌️</span>
+                        <span class="hand-name">チョキ</span>
+                    </button>
+                    <button class="hand-btn" data-hand="paper">
+                        <span class="hand-emoji">✋</span>
+                        <span class="hand-name">パー</span>
+                    </button>
+                </div>
+                <p id="handStatus">手を選択してください</p>
+            </div>
+
+            <!-- バトル結果 -->
+            <div id="battleResult" class="result-display" style="display: none;">
+                <h3 id="resultTitle">結果</h3>
+                <div class="battle-hands">
+                    <div class="player-result">
+                        <h4>あなた</h4>
+                        <div class="hand-display" id="yourHand">-</div>
+                        <div class="result-badge" id="yourResult">-</div>
+                    </div>
+                    <div class="vs">VS</div>
+                    <div class="player-result">
+                        <h4>相手</h4>
+                        <div class="hand-display" id="opponentHand">-</div>
+                        <div class="result-badge" id="opponentResult">-</div>
+                    </div>
+                </div>
+                <div class="result-actions">
+                    <button id="nextRoundBtn" class="btn btn-primary" style="display: none;">次のラウンド</button>
+                    <button id="newBattleBtn" class="btn btn-success" style="display: none;">新しい対戦</button>
+                    <button id="quitBattleBtn" class="btn btn-danger">対戦終了</button>
+                </div>
+            </div>
+
+            <!-- アクションボタン -->
+            <div class="action-buttons">
+                <button id="startMatchingBtn" class="btn btn-primary">マッチング開始</button>
+                <button id="refreshStatsBtn" class="btn btn-info">統計更新</button>
+                <button id="debugResetBtn" class="btn btn-warning">デバッグ: 状態リセット</button>
+            </div>
+            
+            <!-- ランキング表示 -->
+            <div class="ranking-section" style="margin-top: 20px;">
+                <h3>🏆 日次ランキング</h3>
+                <div id="rankingList" style="background: rgba(248, 249, 250, 0.8); border-radius: 8px; padding: 15px;">
+                    <p style="text-align: center; color: #6c757d;">ランキングデータを読み込み中...</p>
+                </div>
+                <button id="loadRankingBtn" class="btn btn-secondary">ランキング更新</button>
+            </div>
+        </div>
+
+        <!-- ログ表示 -->
+        <div class="log-section">
+            <h3>📋 ログ</h3>
+            <div id="logContainer">
+                <div class="log-controls">
+                    <button id="clearLogBtn" class="btn btn-secondary">ログクリア</button>
+                    <label>
+                        <input type="checkbox" id="autoScrollLog" checked> 自動スクロール
+                    </label>
+                </div>
+                <div id="logMessages"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="db-battle.js"></script>
+</body>
+</html>

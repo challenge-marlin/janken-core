@@ -861,148 +861,32 @@ sam local invoke "FunctionName" -e events/test-event.json
 sam deploy --guided
 ```
 
-## データベース管理（Laravel風マイグレーション + SQLAlchemy）
+## データベース管理（Laravel風マイグレーションシステム）
 
-### 🏆 Laravel風マイグレーションシステム
+### 🏆 **統一されたマイグレーションシステム**
+
+本プロジェクトでは、**Laravel風マイグレーションシステム**を標準として採用しています。
 
 #### ✨ **主な特徴**
-- **📁 ファイル分割**: 機能別にマイグレーションファイルを分離
+- **📁 機能別分割**: マイグレーションファイルを機能別に分離
 - **📊 履歴管理**: `migrations`テーブルで実行履歴を自動管理
 - **⏪ ロールバック**: 安全なデータベース状態の巻き戻し
-- **🔗 依存関係**: マイグレーション間の依存関係を明確化
-- **🌱 シーダー**: テストデータの一括投入
+- **🔗 依存関係管理**: マイグレーション間の依存関係を明確化
+- **🌱 シーダー対応**: テストデータの自動投入
+- **🔄 ボリュームマウント**: ファイル修正の自動反映
 
-#### 🚀 **基本的な使用方法**
+### 🚀 **新規プロジェクト構築手順**
 
-##### ⚠️ **重要**: マイグレーションファイルの事前準備
-
-マイグレーションを実行する前に、必要なファイルをAPIコンテナにコピーする必要があります：
-
-```bash
-# 1. 必要なディレクトリをコンテナ内に作成
-docker-compose exec api mkdir -p /app/scripts /app/database/migrations /app/database/seeders
-
-# 2. マイグレーション管理スクリプトをコピー
-docker cp scripts/migrate.py kaminote-janken-api:/app/scripts/
-
-# 3. マイグレーションファイルを順次コピー
-docker cp database/migrations/001_initial_migration.py kaminote-janken-api:/app/database/migrations/
-docker cp database/migrations/002_auth_system_migration.py kaminote-janken-api:/app/database/migrations/
-docker cp database/migrations/003_game_system_migration.py kaminote-janken-api:/app/database/migrations/
-docker cp database/migrations/004_system_tables_migration.py kaminote-janken-api:/app/database/migrations/
-
-# 4. シーダーファイルをコピー
-docker cp database/seeders/UserSeeder.py kaminote-janken-api:/app/database/seeders/
-```
-
-##### 📋 **マイグレーション実行手順**
-
-```bash
-# マイグレーション実行 (php artisan migrate)
-docker-compose exec api python /app/scripts/migrate.py migrate
-
-# 状況確認 (php artisan migrate:status)  
-docker-compose exec api python /app/scripts/migrate.py status
-
-# ロールバック (php artisan migrate:rollback)
-docker-compose exec api python /app/scripts/migrate.py rollback --steps 1
-
-# 特定のマイグレーションまで実行
-docker-compose exec api python /app/scripts/migrate.py migrate --target 002_auth_system_migration
-```
-
-##### 🔍 **データベース状態確認**
-
-```bash
-# 作成されたテーブル一覧
-docker-compose exec mysql mysql -u root -ppassword janken_db -e "SHOW TABLES;"
-
-# マイグレーション履歴確認
-docker-compose exec mysql mysql -u root -ppassword janken_db -e "SELECT migration, batch, executed_at FROM migrations;"
-
-# 特定テーブルの構造確認
-docker-compose exec mysql mysql -u root -ppassword janken_db -e "DESCRIBE users;"
-```
-
-#### 🗂️ **マイグレーションファイル構成**
-
-**1. 001_initial_migration.py** - 基本認証システム
-- `users` - ユーザー基本情報
-- `user_profiles` - ユーザー詳細情報
-- `auth_credentials` - パスワード資格情報
-- `user_devices` - 端末管理
-
-**2. 002_auth_system_migration.py** - Magic Link + JWT認証
-- `magic_link_tokens` - Magic Linkトークン
-- `sessions` - セッション管理
-- `refresh_tokens` - リフレッシュトークン
-- `jwt_blacklist` - JWTブラックリスト
-- `two_factor_auth` - 2要素認証
-
-**3. 003_game_system_migration.py** - ゲーム・統計システム
-- `battle_results` - バトル結果記録
-- `battle_rounds` - バトルラウンド詳細
-- `user_stats` - ユーザー統計
-- `daily_rankings` - 日次ランキング
-
-**4. 004_system_tables_migration.py** - システム管理
-- `system_settings` - システム設定
-- `oauth_accounts` - OAuth連携
-- `login_attempts` - ログイン試行管理
-- `security_events` - セキュリティイベントログ
-- `admin_logs` - 管理者操作ログ
-- `activity_logs` - アクティビティログ
-
-#### 🌱 **シーダーシステム**
-
-```bash
-# シーダー実行（テストユーザー・システム設定投入）
-python scripts/seed.py --class UserSeeder
-
-# 全シーダー実行
-python scripts/seed.py --all
-```
-
-**UserSeeder.py の内容:**
-- 5名のテスト開発者ユーザー（test_user_1〜5）
-- システム設定（タイムアウト・有効期限等）
-- ユーザー統計の初期化
-
-### SQLAlchemy 基本的な使用方法
-
-```python
-# SQLAlchemy 2.0 + 非同期処理
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-
-# 非同期エンジンの作成
-engine = create_async_engine(
-    "mysql+aiomysql://user:pass@localhost/janken_battle_complete",
-    pool_size=5,
-    max_overflow=10,
-    pool_pre_ping=True
-)
-
-# セッションファクトリー
-AsyncSessionLocal = sessionmaker(
-    engine, class_=AsyncSession, expire_on_commit=False
-)
-```
-
-### データベースセットアップ（推奨方法）
-
-#### 🏆 **Laravel風マイグレーションシステム（最推奨 - 2025年最新）**
-
-##### 📋 **ステップ1: 環境準備**
+#### **ステップ1: Docker環境起動**
 ```bash
 # サーバーディレクトリに移動
 cd server
 
-# Docker環境起動
+# Docker環境起動（ボリュームマウントあり）
 docker-compose up -d
 ```
 
-##### 📋 **ステップ2: マイグレーションファイル準備**
+#### **ステップ2: マイグレーションファイル配置**
 ```bash
 # APIコンテナ内にディレクトリ作成
 docker-compose exec api mkdir -p /app/scripts /app/database/migrations /app/database/seeders
@@ -1018,187 +902,214 @@ docker cp database/migrations/004_system_tables_migration.py kaminote-janken-api
 
 # シーダーファイルをコピー
 docker cp database/seeders/UserSeeder.py kaminote-janken-api:/app/database/seeders/
+docker cp scripts/seed.py kaminote-janken-api:/app/scripts/
 ```
 
-##### 📋 **ステップ3: マイグレーション実行**
+#### **ステップ3: マイグレーション実行**
 ```bash
-# Laravel風マイグレーション実行 (php artisan migrate 相当)
+# Laravel風マイグレーション実行（全テーブル作成）
 docker-compose exec api python /app/scripts/migrate.py migrate
 
-# マイグレーション状況確認 (php artisan migrate:status 相当)
+# マイグレーション状況確認
 docker-compose exec api python /app/scripts/migrate.py status
 
-# データベースの確認
-docker-compose exec mysql mysql -u root -ppassword janken_db -e "SHOW TABLES;"
-```
-
-##### 📋 **ステップ4: シーダー実行（オプション）**
-```bash
-# テストユーザー・設定データの投入
+# テストデータ投入
 docker-compose exec api python /app/scripts/seed.py --class UserSeeder
-
-# ロールバック実行 (php artisan migrate:rollback 相当)
-docker-compose exec api python /app/scripts/migrate.py rollback --steps 1
 ```
 
-**🎯 Laravel風マイグレーションの利点:**
-- **🔄 段階的管理**: 機能別にマイグレーションを分割
-- **📊 履歴追跡**: 実行済みマイグレーションの完全管理
-- **⏪ ロールバック**: 問題発生時の安全な取り消し機能
-- **🌱 シーダー対応**: テストデータの自動投入
-- **🏗️ 依存関係**: マイグレーション間の依存管理
-
-##### 🔧 **トラブルシューティング**
-
-**❌ 問題**: `No such file or directory: /app/scripts/migrate.py`
+#### **ステップ4: 動作確認**
 ```bash
-# 解決策: 必要なファイルをコンテナにコピー
-docker cp scripts/migrate.py kaminote-janken-api:/app/scripts/
-docker cp database/migrations/ kaminote-janken-api:/app/database/migrations/
-```
-
-**❌ 問題**: `ModuleNotFoundError: No module named 'sqlalchemy'`
-```bash
-# 解決策: APIコンテナ内で実行（SQLAlchemyが事前インストール済み）
-docker-compose exec api python /app/scripts/migrate.py migrate
-```
-
-**❌ 問題**: 既存テーブルとの競合
-```bash
-# 解決策: テーブルを一旦削除して再実行
-docker-compose exec mysql mysql -u root -ppassword janken_db -e "DROP TABLE IF EXISTS migrations, users, user_profiles;"
-docker-compose exec api python /app/scripts/migrate.py migrate
-```
-
-**✅ 動作確認コマンド**
-```bash
-# マイグレーション状態確認
-docker-compose exec api python /app/scripts/migrate.py status
-
-# テーブル確認
+# テーブル一覧確認
 docker-compose exec mysql mysql -u root -ppassword janken_db -e "SHOW TABLES;"
+
+# テストユーザー確認
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "SELECT user_id, email, nickname FROM users LIMIT 5;"
 
 # マイグレーション履歴確認
 docker-compose exec mysql mysql -u root -ppassword janken_db -e "SELECT migration, batch, executed_at FROM migrations;"
 ```
 
-#### 📁 **マイグレーション構造**
+### 📋 **日常的なマイグレーション操作**
+
+#### **基本コマンド**
+```bash
+# 新規マイグレーション実行
+docker-compose exec api python /app/scripts/migrate.py migrate
+
+# マイグレーション状況確認
+docker-compose exec api python /app/scripts/migrate.py status
+
+# ロールバック（最後の1つを取り消し）
+docker-compose exec api python /app/scripts/migrate.py rollback --steps 1
+
+# 特定のマイグレーションまで実行
+docker-compose exec api python /app/scripts/migrate.py migrate --target 003_game_system_migration
+```
+
+#### **データベース状態監視**
+```bash
+# 全テーブル一覧
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "SHOW TABLES;"
+
+# マイグレーション履歴詳細
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "
+SELECT 
+    migration, 
+    batch, 
+    executed_at,
+    DATE_FORMAT(executed_at, '%Y-%m-%d %H:%i:%s') as formatted_time
+FROM migrations 
+ORDER BY batch, executed_at;"
+
+# テーブル構造確認
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "DESCRIBE users;"
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "DESCRIBE user_stats;"
+```
+
+### 🗂️ **マイグレーションファイル構成**
+
 ```
 database/
-├── migrations/                    # Laravel風マイグレーション
-│   ├── 001_initial_migration.py   # 基本認証システム（ユーザー・プロフィール）
-│   ├── 002_auth_system_migration.py # Magic Link + JWT + セッション
-│   ├── 003_game_system_migration.py # ゲーム・統計・ランキング
-│   └── 004_system_tables_migration.py # システム設定・OAuth・ログ
-├── seeders/                       # Laravel風シーダー
-│   └── UserSeeder.py              # テストユーザー・システム設定
-└── sql/                           # レガシー（移行中）
-    ├── create_tables.sql          # 一括SQL（非推奨）
-    └── quick_db_setup.sql         # 差分SQL（非推奨）
+├── migrations/                    # Laravel風マイグレーション（標準）
+│   ├── 001_initial_migration.py   # 基本認証システム（users, user_profiles, auth_credentials）
+│   ├── 002_auth_system_migration.py # Magic Link + JWT（sessions, magic_link_tokens, jwt_blacklist）
+│   ├── 003_game_system_migration.py # ゲーム・統計（battle_results, user_stats, daily_rankings）
+│   └── 004_system_tables_migration.py # システム管理（system_settings, login_attempts）
+├── seeders/                       # テストデータ
+│   └── UserSeeder.py              # 5名のテストユーザー + システム設定
+└── scripts/                       # 管理スクリプト
+    ├── migrate.py                 # マイグレーション管理（php artisan migrate 相当）
+    └── seed.py                    # シーダー実行（php artisan db:seed 相当）
 ```
 
-#### 🚀 **従来のSQLセットアップ（互換性維持・移行期間中）**
+#### **各マイグレーションの詳細**
+
+**001_initial_migration.py - 基本認証システム**
+- `users` - ユーザー基本情報（user_id, email, nickname, role）
+- `user_profiles` - ユーザー詳細情報（住所、電話番号等）
+- `auth_credentials` - パスワード認証情報
+- `user_devices` - デバイス管理
+
+**002_auth_system_migration.py - Magic Link + JWT認証**
+- `magic_link_tokens` - Magic Linkトークン管理
+- `sessions` - セッション管理
+- `refresh_tokens` - リフレッシュトークン管理
+- `jwt_blacklist` - JWTブラックリスト
+- `two_factor_auth` - 2要素認証
+
+**003_game_system_migration.py - ゲーム・統計システム**
+- `battle_results` - バトル結果記録
+- `battle_rounds` - バトルラウンド詳細
+- `user_stats` - ユーザー統計（勝敗、連勝記録等）
+- `daily_rankings` - 日次ランキング
+
+**004_system_tables_migration.py - システム管理**
+- `system_settings` - システム設定
+- `oauth_accounts` - OAuth連携
+- `login_attempts` - ログイン試行管理
+- `security_events` - セキュリティイベントログ
+- `admin_logs` - 管理者操作ログ
+- `activity_logs` - アクティビティログ
+
+### 🌱 **シーダーシステム**
+
+#### **基本的な使用方法**
 ```bash
-# 完全認証システム対応のセットアップ
-cd server
+# ユーザーシーダー実行（テストユーザー + システム設定投入）
+docker-compose exec api python /app/scripts/seed.py --class UserSeeder
 
-# 方法1: 完全なcreate_tables.sqlを使用
-docker cp database/sql/create_tables.sql kaminote-janken-mysql:/tmp/
-docker-compose exec mysql mysql -u root -ppassword -e "source /tmp/create_tables.sql"
-
-# 方法2: 既存テーブルに不足分を追加
-docker cp database/sql/quick_db_setup.sql kaminote-janken-mysql:/tmp/
-docker-compose exec mysql mysql -u root -ppassword janken_db -e "source /tmp/quick_db_setup.sql"
+# 全シーダー実行
+docker-compose exec api python /app/scripts/seed.py --all
 ```
 
-**⚠️ 移行方針:**
-- **新規プロジェクト**: Laravel風マイグレーションシステムを使用
-- **既存環境**: 従来のSQL方式で継続可能（互換性あり）
-- **将来計画**: 段階的にLaravel風マイグレーションに移行
-
-#### 🐳 **Docker Compose手動セットアップ**
-```bash
-# 1. MySQLサービス起動（データベース自動作成）
-docker-compose up -d mysql
-
-# 2. MySQLの起動完了を待機（重要：約30秒）
-echo "MySQLの起動を待機中..."
-sleep 30
-
-# 3. 完全認証システムテーブル作成
-docker cp database/sql/create_tables.sql kaminote-janken-mysql:/tmp/
-docker-compose exec mysql mysql -u root -ppassword -e "source /tmp/create_tables.sql"
-
-# 4. テーブル作成確認
-echo "=== テーブル作成確認 ==="
-docker-compose exec mysql mysql -u root -ppassword janken_battle_complete -e "SHOW TABLES;"
-
-# 5. 基本テーブル内容確認
-echo "=== 基本データ確認 ==="
-docker-compose exec mysql mysql -u root -ppassword janken_battle_complete -e "
-SELECT 'ユーザー数' as item, COUNT(*) as count FROM users
-UNION ALL
-SELECT 'システム設定数', COUNT(*) FROM system_settings
-UNION ALL
-SELECT 'テストユーザー数', COUNT(*) FROM users WHERE role = 'developer';
-"
-
-# 6. 認証テーブル確認
-echo "=== 認証システムテーブル確認 ==="
-docker-compose exec mysql mysql -u root -ppassword janken_battle_complete -e "
-SELECT 
-    table_name, 
-    table_rows,
-    ROUND(((data_length + index_length) / 1024 / 1024), 2) AS 'Size (MB)'
-FROM information_schema.tables 
-WHERE table_schema = 'janken_battle_complete'
-ORDER BY table_name;
-"
-
-# 7. 全サービス起動
-docker-compose up -d
-
-# 8. 動作確認
-echo "=== 動作確認 ==="
-echo "API ヘルスチェック: http://localhost/api/health"
-echo "phpMyAdmin: http://localhost:8080 (root/password)"
-echo "Redis Commander: http://localhost:8081"
-```
-
-#### 🚀 **新規リポジトリ展開時の完全セットアップ**
-```bash
-# 1. リポジトリクローン後、serverディレクトリに移動
-cd server
-
-# 2. MySQLサービス起動
-docker-compose up -d mysql
-
-# 3. MySQL起動待機
-sleep 30
-
-# 4. 完全認証システムセットアップ
-docker cp database/sql/create_tables.sql kaminote-janken-mysql:/tmp/
-docker-compose exec mysql mysql -u root -ppassword -e "source /tmp/create_tables.sql"
-
-# 5. セットアップ確認
-docker-compose exec mysql mysql -u root -ppassword janken_battle_complete -e "SHOW TABLES;"
-
-# 6. 全サービス起動
-docker-compose up -d
-
-# 7. 動作確認
-curl http://localhost/api/health
-echo "セットアップ完了！"
-echo "ブラウザで http://localhost にアクセスしてください"
-echo "データベース管理: http://localhost:8080 (root/password)"
-```
-
-#### 📊 **投入されるデータ**
-- **ユーザー**: 5名のテスト開発者ユーザー（test_user_1～5）
-- **認証システム**: 完全認証テーブル（Magic Link、JWT、セッション管理）
-- **ゲームシステム**: バトル結果、ランキング、統計テーブル
+#### **投入されるテストデータ**
+- **5名のテストユーザー**: `test_user_1` ～ `test_user_5`
+  - Email: `test1@example.com` ～ `test5@example.com`
+  - Password: `password123`
+  - ニックネーム: じゃんけんマスター、バトルクイーン、勝負師、新米戦士、伝説のプレイヤー
 - **システム設定**: セキュリティ・認証・ゲーム設定値
-- **監査ログ**: セキュリティイベント、ログイン試行、管理操作ログ
+- **統計データ初期化**: 各ユーザーの初期統計レコード
+
+### 🆕 **新しいマイグレーション追加時の手順**
+
+```bash
+# 1. 新規マイグレーションファイルを作成
+# database/migrations/005_new_feature_migration.py
+
+# 2. コンテナにコピー
+docker cp database/migrations/005_new_feature_migration.py kaminote-janken-api:/app/database/migrations/
+
+# 3. マイグレーション実行
+docker-compose exec api python /app/scripts/migrate.py migrate
+
+# 4. 実行確認
+docker-compose exec api python /app/scripts/migrate.py status
+```
+
+### 🔧 **トラブルシューティング**
+
+#### **よくある問題と解決策**
+
+**❌ 問題**: `No such file or directory: /app/scripts/migrate.py`
+```bash
+# 解決策: スクリプトファイルをコピー
+docker cp scripts/migrate.py kaminote-janken-api:/app/scripts/
+docker cp scripts/seed.py kaminote-janken-api:/app/scripts/
+```
+
+**❌ 問題**: `ModuleNotFoundError: No module named 'sqlalchemy'`
+```bash
+# 解決策: APIコンテナ内で実行（事前インストール済み）
+docker-compose exec api python /app/scripts/migrate.py migrate
+```
+
+**❌ 問題**: 既存テーブルとの競合
+```bash
+# 解決策: データベースをクリーンアップして再実行
+docker-compose exec mysql mysql -u root -ppassword -e "DROP DATABASE IF EXISTS janken_db; CREATE DATABASE janken_db;"
+docker-compose exec api python /app/scripts/migrate.py migrate
+```
+
+**❌ 問題**: SQLAlchemyモデルとテーブル構造の不整合
+```bash
+# 解決策: モデル定義を確認し、マイグレーションファイルと整合させる
+# 1. src/shared/database/models.py を確認
+# 2. database/migrations/ のテーブル定義と比較
+# 3. 不整合があれば新しいマイグレーションファイルで修正
+```
+
+### 💡 **ベストプラクティス**
+
+#### **開発時の推奨ワークフロー**
+1. **毎回マイグレーション確認**: `docker-compose exec api python /app/scripts/migrate.py status`
+2. **新しいマイグレーション実行**: `docker-compose exec api python /app/scripts/migrate.py migrate`
+3. **問題発生時のロールバック**: `docker-compose exec api python /app/scripts/migrate.py rollback --steps 1`
+4. **定期的な状態確認**: データベースの整合性を定期的にチェック
+
+#### **ファイル管理のポイント**
+- **ボリュームマウント活用**: `src/`と`main-html/`は自動反映
+- **スクリプトファイル**: 初回のみコンテナコピーが必要
+- **マイグレーションファイル**: 新規追加時のみコンテナコピーが必要
+
+### 🔄 **SQLAlchemy 2.0との連携**
+
+```python
+# 非同期エンジンの作成
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+
+engine = create_async_engine(
+    "mysql+aiomysql://root:password@mysql:3306/janken_db",
+    pool_size=5,
+    max_overflow=10,
+    pool_pre_ping=True
+)
+
+# セッションファクトリー
+AsyncSessionLocal = sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
+)
+```
 
 ### AWS環境での設定
 
@@ -1407,37 +1318,7 @@ class GameSession(Base):
     created_at = Column(DateTime, default=func.now())
 ```
 
-## クイック確認コマンド
 
-### 📋 **データベース状態確認**
-```bash
-# テーブル一覧表示
-docker-compose exec mysql mysql -u root -ppassword janken_battle_complete -e "SHOW TABLES;"
-
-# ユーザー確認
-docker-compose exec mysql mysql -u root -ppassword janken_battle_complete -e "SELECT user_id, email, nickname, role FROM users;"
-
-# システム設定確認
-docker-compose exec mysql mysql -u root -ppassword janken_battle_complete -e "SELECT setting_key, setting_value FROM system_settings;"
-
-# 認証テーブル構造確認
-docker-compose exec mysql mysql -u root -ppassword janken_battle_complete -e "DESCRIBE users; DESCRIBE sessions; DESCRIBE magic_link_tokens;"
-```
-
-### 🔧 **トラブルシューティング確認**
-```bash
-# データベース接続確認
-docker-compose exec mysql mysql -u root -ppassword -e "SHOW DATABASES;"
-
-# テーブル数確認
-docker-compose exec mysql mysql -u root -ppassword janken_battle_complete -e "SELECT COUNT(*) as table_count FROM information_schema.tables WHERE table_schema='janken_battle_complete';"
-
-# コンテナ状態確認
-docker-compose ps
-
-# ログ確認
-docker-compose logs mysql | tail -20
-```
 
 ## Docker環境の管理
 

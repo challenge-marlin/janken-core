@@ -9,6 +9,7 @@ import secrets
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 import uuid
 import jwt
 from fastapi import HTTPException
@@ -20,7 +21,7 @@ from ...shared.exceptions.handlers import (
 from ...shared.database.models import (
     User, MagicLink, CaptchaChallenge, generate_magic_link_token,
     create_magic_link_expires_at, generate_captcha_challenge_id,
-    create_captcha_expires_at, UserStats
+    create_captcha_expires_at, UserStats, AuthCredentials, UserProfile
 )
 from ...shared.services.jwt_service import jwt_service
 from ...shared.database.connection import get_db_session as get_db
@@ -630,4 +631,99 @@ class AuthService:
                 "iat": payload.get("iat")
             }
         except Exception as e:
-            raise AuthenticationError(f"認証に失敗しました: {str(e)}") 
+            raise AuthenticationError(f"認証に失敗しました: {str(e)}")
+
+    async def login_with_db_credentials(
+        self,
+        email: str,
+        password: str
+    ) -> Dict[str, Any]:
+        """
+        DBに保存された認証情報を使用したログイン
+        
+        Args:
+            email: メールアドレス
+            password: パスワード
+            
+        Returns:
+            ログイン結果（ユーザー情報とトークン）
+            
+        Raises:
+            AuthenticationError: 認証エラー
+        """
+        try:
+            # 非同期データベース接続
+            from ...shared.database.connection_improved import get_async_session
+            
+            async with get_async_session() as db:
+                # ユーザー情報を取得
+                result = await db.execute(
+                    select(User).where(User.email == email)
+                )
+                user = result.scalar_one_or_none()
+                
+                if not user:
+                    raise AuthenticationError("ユーザーが見つかりません")
+                
+                # 認証資格情報を取得
+                result = await db.execute(
+                    select(AuthCredentials).where(AuthCredentials.user_id == user.user_id)
+                )
+                auth_cred = result.scalar_one_or_none()
+                
+                if not auth_cred:
+                    raise AuthenticationError("認証情報が見つかりません")
+                
+                # パスワード検証
+                password_hash = hashlib.sha256(password.encode()).hexdigest()
+                if auth_cred.password_hash != password_hash:
+                    raise AuthenticationError("パスワードが正しくありません")
+                
+                # ユーザープロフィール情報を取得
+                result = await db.execute(
+                    select(UserProfile).where(UserProfile.user_id == user.user_id)
+                )
+                user_profile = result.scalar_one_or_none()
+                
+                # ユーザー統計情報を取得
+                result = await db.execute(
+                    select(UserStats).where(UserStats.user_id == user.user_id)
+                )
+                user_stats = result.scalar_one_or_none()
+                
+                # レスポンス用のユーザー情報を構築
+                user_data = {
+                    "user_id": user.user_id,
+                    "email": user.email,
+                    "nickname": user.nickname,
+                    "role": getattr(user, 'role', 'user'),
+                    "title": getattr(user, 'title', ''),
+                    "alias": getattr(user, 'alias', ''),
+                    "created_at": getattr(user, 'created_at', None),
+                    "updated_at": getattr(user, 'updated_at', None),
+                    "profile": {
+                        "register_type": user_profile.register_type if user_profile else "email"
+                    },
+                    "stats": {
+                        "total_matches": getattr(user_stats, 'total_matches', 0) if user_stats else 0,
+                        "total_wins": getattr(user_stats, 'total_wins', 0) if user_stats else 0,
+                        "total_losses": getattr(user_stats, 'total_losses', 0) if user_stats else 0,
+                        "total_draws": getattr(user_stats, 'total_draws', 0) if user_stats else 0,
+                        "win_rate": float(getattr(user_stats, 'win_rate', 0.0)) if user_stats else 0.0,
+                        "current_streak": getattr(user_stats, 'current_streak', 0) if user_stats else 0,
+                        "best_streak": getattr(user_stats, 'best_streak', 0) if user_stats else 0
+                    } if user_stats else {}
+                }
+                
+                # JWTトークンを生成
+                jwt_token = self._create_jwt_token(user_data)
+                
+                return {
+                    "user": user_data,
+                    "token": jwt_token
+                }
+            
+        except Exception as e:
+            if isinstance(e, AuthenticationError):
+                raise e
+            raise AuthenticationError(f"ログイン処理に失敗しました: {str(e)}") 

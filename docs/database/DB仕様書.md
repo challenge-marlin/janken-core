@@ -68,8 +68,13 @@
 | ユーザーID | user_id | VARCHAR(50) | NO (PK) | | JWTのsubクレーム、セッション管理、外部キー参照用 |
 | メールアドレス | email | VARCHAR(255) | NO (UNIQUE) | | Magic Link送信先、ログイン識別子、重複防止 |
 | ニックネーム | nickname | VARCHAR(100) | NO | | ゲーム内表示名、ランキング表示 |
+| 実名 | name | VARCHAR(50) | YES | | 本人確認、公的手続き用 |
 | 権限レベル | role | ENUM | NO | 'user' | アクセス制御、機能制限（user/developer/admin） |
+| プロフィール画像 | profile_image_url | VARCHAR(500) | YES | | アバター表示、個性化 |
+| タイトル | title | VARCHAR(100) | YES | 'じゃんけんプレイヤー' | ゲーム内称号、達成感演出 |
+| 別名 | alias | VARCHAR(100) | YES | | ニックネーム補完、個性化 |
 | アクティブ状態 | is_active | BOOLEAN | NO | TRUE | アカウント有効性、BANユーザー管理 |
+| BAN状態 | is_banned | TINYINT | NO | 0 | BANレベル（0:正常、1:一時停止、2:永久停止） |
 | 作成日時 | created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | アカウント作成日時、統計・監査用 |
 | 更新日時 | updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 最終更新日時、アクティビティ監視 |
 
@@ -92,17 +97,16 @@
 | カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明・用途 |
 |---------|--------|-----|----------|------------|------------|
 | ユーザーID | user_id | VARCHAR(50) | NO (PK) | | users.user_idとの紐付け |
-| 実名 | full_name | VARCHAR(100) | YES | | 本人確認、公的手続き用 |
-| 電話番号 | phone_number | VARCHAR(15) | YES | | 連絡先、緊急時連絡用 |
 | 郵便番号 | postal_code | VARCHAR(10) | YES | | 住所情報、配送・統計用 |
 | 住所 | address | VARCHAR(255) | YES | | 住所情報、配送・統計用 |
-| 生年月日 | birthdate | DATE | YES | | 年齢制限、統計分析用 |
+| 電話番号 | phone_number | VARCHAR(15) | YES | | 連絡先、緊急時連絡用 |
 | 学校名 | university | VARCHAR(100) | YES | | 学生認証、コミュニティ機能用 |
-| プロフィール画像 | profile_image_url | VARCHAR(500) | YES | | アバター表示、個性化 |
+| 生年月日 | birthdate | DATE | YES | | 年齢制限、統計分析用 |
 | 学生証画像 | student_id_image_url | VARCHAR(500) | YES | | 学生認証、本人確認用 |
-| 学生証編集可否 | is_student_id_editable | BOOLEAN | NO | FALSE | 編集制御、不正防止 |
-| タイトル | title | VARCHAR(100) | YES | | ゲーム内称号、達成感演出 |
-| 別名 | alias | VARCHAR(100) | YES | | ニックネーム補完、個性化 |
+| 学生証編集可否 | is_student_id_editable | TINYINT | NO | 0 | 編集制御、不正防止（0:不可、1:可） |
+| 登録タイプ | register_type | VARCHAR(20) | YES | 'email' | 登録方法識別（email/oauth/invite） |
+| 作成日時 | created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | レコード作成日時 |
+| 更新日時 | updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 最終更新日時 |
 
 #### 外部キー
 - **user_id** → users(user_id) ON DELETE CASCADE
@@ -137,18 +141,20 @@
 
 | カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明・用途 |
 |---------|--------|-----|----------|------------|------------|
-| デバイスID | device_id | VARCHAR(100) | NO (PK) | | 端末一意識別子、セッション管理用 |
+| デバイスID | device_id | VARCHAR(128) | NO (PK) | | 端末一意識別子、セッション管理用 |
 | ユーザーID | user_id | VARCHAR(50) | NO | | users.user_idとの紐付け |
+| サブ番号 | subnum | INT | NO | 1 | ユーザー内での端末番号 |
+| アイテムタイプ | itemtype | TINYINT | NO | 0 | 端末種別コード（0:PC、1:スマホ、2:タブレット） |
 | デバイス名 | device_name | VARCHAR(100) | YES | | ユーザー設定の端末名、管理画面表示用 |
-| デバイス種別 | device_type | ENUM | NO | 'unknown' | 端末種別識別、UI最適化用 |
-| OS情報 | os_info | VARCHAR(100) | YES | | OS詳細情報、互換性確認用 |
-| ブラウザ情報 | browser_info | VARCHAR(100) | YES | | ブラウザ詳細、機能対応確認用 |
-| 信頼済み | is_trusted | BOOLEAN | NO | FALSE | 信頼済み端末、2FA省略判定用 |
+| デバイス情報 | device_info | JSON | YES | | 端末詳細情報（OS、ブラウザ等） |
 | アクティブ | is_active | BOOLEAN | NO | TRUE | 端末有効性、利用制御用 |
-| 最終アクセス | last_accessed_at | TIMESTAMP | YES | | 最終アクセス日時、非アクティブ端末検知 |
+| 最終使用日時 | last_used_at | TIMESTAMP | YES | | 最終使用日時、非アクティブ端末検知 |
+| 作成日時 | created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 端末登録日時 |
+| 更新日時 | updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 最終更新日時 |
 
 #### インデックス
-- **INDEX**: user_id, device_type, is_active, last_accessed_at
+- **UNIQUE KEY**: (user_id, subnum) - ユーザー内での端末番号重複防止
+- **INDEX**: user_id, itemtype, is_active, last_used_at
 
 ---
 
@@ -284,16 +290,19 @@
 
 | カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明・用途 |
 |---------|--------|-----|----------|------------|------------|
-| 戦闘番号 | fight_no | BIGINT AUTO_INCREMENT | NO | | 既存システム互換用、内部管理 |
 | バトルID | battle_id | VARCHAR(100) | NO (PK) | | バトル一意識別子、Redis連携用 |
+| 戦闘番号 | fight_no | BIGINT AUTO_INCREMENT | NO | | 既存システム互換用、内部管理 |
 | プレイヤー1ID | player1_id | VARCHAR(50) | NO | | 参加者1のユーザーID |
 | プレイヤー2ID | player2_id | VARCHAR(50) | NO | | 参加者2のユーザーID |
+| プレイヤー1ニックネーム | player1_nickname | VARCHAR(50) | YES | | プレイヤー1の表示名（記録時点） |
+| プレイヤー2ニックネーム | player2_nickname | VARCHAR(50) | YES | | プレイヤー2の表示名（記録時点） |
 | 勝者ID | winner_id | VARCHAR(50) | YES | | 勝利者のユーザーID（引き分けはNULL） |
 | 総ラウンド数 | total_rounds | INT | NO | 0 | 実行されたラウンド数 |
 | プレイヤー1勝利数 | player1_wins | INT | NO | 0 | プレイヤー1の勝利ラウンド数 |
 | プレイヤー2勝利数 | player2_wins | INT | NO | 0 | プレイヤー2の勝利ラウンド数 |
 | 引き分け数 | draws | INT | NO | 0 | 引き分けラウンド数 |
-| バトル形式 | battle_type | ENUM | NO | 'standard' | バトル種別（standard/tournament/friend） |
+| バトル時間 | battle_duration_seconds | INT | NO | 0 | バトル所要時間（秒） |
+| マッチタイプ | match_type | ENUM | NO | 'random' | マッチ種別（random/friend） |
 | 開始日時 | started_at | TIMESTAMP | YES | | バトル開始日時 |
 | 終了日時 | finished_at | TIMESTAMP | YES | | バトル終了日時 |
 | 作成日時 | created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | レコード作成日時 |
@@ -319,27 +328,53 @@
 | 勝率 | win_rate | DECIMAL(5,2) | NO | 0.00 | 勝率（％）、ランキング用 |
 | 現在連勝数 | current_streak | INT | NO | 0 | 現在の連勝記録 |
 | 最高連勝数 | best_streak | INT | NO | 0 | 過去最高の連勝記録 |
+| 総ラウンド数 | total_rounds_played | INT | NO | 0 | 実行された総ラウンド数 |
 | グー使用回数 | rock_count | INT | NO | 0 | グーを出した回数 |
 | パー使用回数 | paper_count | INT | NO | 0 | パーを出した回数 |
 | チョキ使用回数 | scissors_count | INT | NO | 0 | チョキを出した回数 |
-| お気に入りの手 | favorite_hand | ENUM | YES | | 最も多く使用する手 |
-| 直近戦績 | recent_results | VARCHAR(255) | NO | '' | 直近5戦の結果文字列 |
-| 当日勝利数 | daily_wins | INT | NO | 0 | 当日の勝利数（日次リセット） |
-| 当日敗北数 | daily_losses | INT | NO | 0 | 当日の敗北数（日次リセット） |
-| 当日引き分け数 | daily_draws | INT | NO | 0 | 当日の引き分け数（日次リセット） |
+| お気に入りの手 | favorite_hand | VARCHAR(10) | YES | | 最も多く使用する手 |
+| 直近手順結果 | recent_hand_results_str | VARCHAR(255) | NO | '' | 直近の手と結果の文字列 |
+| 平均バトル時間 | average_battle_duration_seconds | INT | NO | 0 | 平均バトル所要時間（秒） |
+| 最終対戦日時 | last_battle_at | TIMESTAMP | YES | | 最後に対戦した日時 |
 | 称号 | title | VARCHAR(50) | NO | '' | 現在の表示称号 |
 | 獲得称号一覧 | available_titles | VARCHAR(255) | NO | '' | 獲得済み称号のCSV |
 | 二つ名 | alias | VARCHAR(50) | NO | '' | 現在の二つ名 |
 | 称号表示設定 | show_title | BOOLEAN | NO | TRUE | 称号の公開設定 |
 | 二つ名表示設定 | show_alias | BOOLEAN | NO | TRUE | 二つ名の公開設定 |
-| ユーザーランク | user_rank | ENUM | NO | 'no_rank' | ランク（no_rank/bronze/silver/gold/platinum/diamond） |
-| 最終リセット日 | last_reset_at | DATE | YES | | 日次統計リセット日 |
-| 最終対戦日時 | last_battle_at | TIMESTAMP | YES | | 最後に対戦した日時 |
+| ユーザーランク | user_rank | VARCHAR(20) | NO | 'no_rank' | ランク（no_rank/bronze/silver/gold/platinum/diamond） |
+| 最終リセット日 | last_reset_at | DATE | NO | CURDATE() | 日次統計リセット日 |
 | 更新日時 | updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 統計更新日時 |
 
 #### インデックス
 - **INDEX**: win_rate DESC, total_matches DESC（ランキング用）
-- **INDEX**: user_rank, daily_wins DESC（デイリーランキング用）
+- **INDEX**: user_rank, last_battle_at（ユーザーランク・最終対戦日時用）
+- **INDEX**: total_rounds_played, current_streak（統計分析用）
+
+---
+
+### 12. daily_rankings（日次ランキング）⭐⭐
+
+**用途**: 日次ランキングデータの管理
+
+| カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明・用途 |
+|---------|--------|-----|----------|------------|------------|
+| ランキングID | ranking_id | VARCHAR(100) | NO (PK) | | ランキング一意識別子 |
+| ランキング順位 | ranking_position | INT | NO | | その日の順位 |
+| ランキング日付 | ranking_date | DATE | NO | | ランキング対象日 |
+| ユーザーID | user_id | VARCHAR(50) | NO | | users.user_idとの紐付け |
+| 日次勝利数 | daily_wins | INT | NO | 0 | その日の勝利数 |
+| 日次試合数 | daily_matches | INT | NO | 0 | その日の総試合数 |
+| 日次勝率 | daily_win_rate | DECIMAL(5,2) | NO | 0.00 | その日の勝率 |
+| 最終勝利日時 | last_win_at | DATETIME | YES | | 最後に勝利した日時 |
+| 作成日時 | created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | レコード作成日時 |
+| 更新日時 | updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 最終更新日時 |
+
+#### 外部キー
+- **user_id** → users(user_id) ON DELETE CASCADE
+
+#### インデックス
+- **UNIQUE KEY**: (ranking_date, user_id) - 日付・ユーザー重複防止
+- **INDEX**: ranking_date, ranking_position, last_win_at
 
 ---
 

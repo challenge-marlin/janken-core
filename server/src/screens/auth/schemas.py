@@ -60,6 +60,19 @@ class UserInfoLoginRequest(BaseModel):
         populate_by_name = True
 
 
+class DBLoginRequest(BaseModel):
+    """DBありきログインリクエスト"""
+    email: EmailStr = Field(..., description="メールアドレス")
+    password: str = Field(..., min_length=1, description="パスワード")
+    
+    @validator('email')
+    def validate_email(cls, v):
+        """メールアドレス形式検証"""
+        if not v or len(v) < 5:
+            raise ValueError('有効なメールアドレスを入力してください')
+        return v.lower()
+
+
 # ========================================
 # Responseスキーマ（LaravelのResourceに相当）
 # ========================================
