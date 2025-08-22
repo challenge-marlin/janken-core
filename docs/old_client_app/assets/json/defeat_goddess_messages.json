@@ -1,0 +1,254 @@
+{
+  "messages": [
+    {
+      "id": 1,
+      "expression": "defeat_teary_eyes.png",
+      "line": "くやしい…でも、よく頑張ったよね…"
+    },
+    {
+      "id": 2,
+      "expression": "defeat_teary_eyes.png",
+      "line": "あと少しだったのに…でも諦めないよ！"
+    },
+    {
+      "id": 3,
+      "expression": "defeat_teary_eyes.png",
+      "line": "涙が…止まらない…"
+    },
+    {
+      "id": 4,
+      "expression": "defeat_teary_eyes.png",
+      "line": "悔しいけど、君の一手、ちゃんと輝いてた…"
+    },
+    {
+      "id": 5,
+      "expression": "defeat_teary_eyes.png",
+      "line": "大丈夫、次こそ一緒に勝とうね！"
+    },
+    {
+      "id": 6,
+      "expression": "defeat_teary_eyes.png",
+      "line": "この涙は、きっと次への力になるんだから！"
+    },
+    {
+      "id": 7,
+      "expression": "defeat_frustrated_grit_teeth.png",
+      "line": "くっ…次は絶対、負けないからっ！"
+    },
+    {
+      "id": 8,
+      "expression": "defeat_frustrated_grit_teeth.png",
+      "line": "悔しい…！こんなとこで止まれないよ！"
+    },
+    {
+      "id": 9,
+      "expression": "defeat_frustrated_grit_teeth.png",
+      "line": "この悔しさ、忘れない！"
+    },
+    {
+      "id": 10,
+      "expression": "defeat_frustrated_grit_teeth.png",
+      "line": "絶対リベンジしようね！！"
+    },
+    {
+      "id": 11,
+      "expression": "defeat_frustrated_grit_teeth.png",
+      "line": "あと一歩…でもその一歩が大事なんだ…！"
+    },
+    {
+      "id": 12,
+      "expression": "defeat_frustrated_grit_teeth.png",
+      "line": "いい戦いだった…けど、次は譲らないから！"
+    },
+    {
+      "id": 13,
+      "expression": "defeat_sad_smile.png",
+      "line": "負けちゃったね…でも、楽しかったよ！"
+    },
+    {
+      "id": 14,
+      "expression": "defeat_sad_smile.png",
+      "line": "うん、いい勝負だったよね？"
+    },
+    {
+      "id": 15,
+      "expression": "defeat_sad_smile.png",
+      "line": "悔しいけど…笑顔は忘れない♪"
+    },
+    {
+      "id": 16,
+      "expression": "defeat_sad_smile.png",
+      "line": "一緒にがんばってくれて、ありがとうね！"
+    },
+    {
+      "id": 17,
+      "expression": "defeat_sad_smile.png",
+      "line": "今日は惜しかったね。でも君、すごかったよ！"
+    },
+    {
+      "id": 18,
+      "expression": "defeat_sad_smile.png",
+      "line": "今日の君の一手、すごくよかったよ。"
+    },
+    {
+      "id": 19,
+      "expression": "defeat_crying_open_mouth.png",
+      "line": "うわああん！悔しいよ～～！"
+    },
+    {
+      "id": 20,
+      "expression": "defeat_crying_open_mouth.png",
+      "line": "くやし～～～！！でもがんばったんだもん！"
+    },
+    {
+      "id": 21,
+      "expression": "defeat_crying_open_mouth.png",
+      "line": "こんなのって、こんなのって…！"
+    },
+    {
+      "id": 22,
+      "expression": "defeat_crying_open_mouth.png",
+      "line": "悔しいよ…でも次こそ勝つもん！！"
+    },
+    {
+      "id": 23,
+      "expression": "defeat_crying_open_mouth.png",
+      "line": "泣いちゃうけど、これが私の本音だから！"
+    },
+    {
+      "id": 24,
+      "expression": "defeat_crying_open_mouth.png",
+      "line": "うぇぇん…でも負けない…！"
+    },
+    {
+      "id": 25,
+      "expression": "defeat_pout_cheeks_inflated.png",
+      "line": "むぅ～…今日は調子が悪かっただけだもん！"
+    },
+    {
+      "id": 26,
+      "expression": "defeat_pout_cheeks_inflated.png",
+      "line": "むーー！もう一回やろっ！！"
+    },
+    {
+      "id": 27,
+      "expression": "defeat_pout_cheeks_inflated.png",
+      "line": "たまたまだよ！たまたまっ！！"
+    },
+    {
+      "id": 28,
+      "expression": "defeat_pout_cheeks_inflated.png",
+      "line": "次は絶対、勝っちゃうからね！！"
+    },
+    {
+      "id": 29,
+      "expression": "defeat_pout_cheeks_inflated.png",
+      "line": "ちょっと悔しいだけだからね！？"
+    },
+    {
+      "id": 30,
+      "expression": "defeat_pout_cheeks_inflated.png",
+      "line": "むーーん…覚えてなさいよ！"
+    },
+    {
+      "id": 31,
+      "expression": "defeat_downcast_eyes.png",
+      "line": "……負けちゃったね。"
+    },
+    {
+      "id": 32,
+      "expression": "defeat_downcast_eyes.png",
+      "line": "なんだか…ちょっとしょんぼりしちゃった…"
+    },
+    {
+      "id": 33,
+      "expression": "defeat_downcast_eyes.png",
+      "line": "もう少し、うまくできたはずなのに…"
+    },
+    {
+      "id": 34,
+      "expression": "defeat_downcast_eyes.png",
+      "line": "大丈夫…私たち、また立ち上がれるよね？"
+    },
+    {
+      "id": 35,
+      "expression": "defeat_downcast_eyes.png",
+      "line": "悔しい気持ち、ちゃんと受け止めるよ。"
+    },
+    {
+      "id": 36,
+      "expression": "defeat_downcast_eyes.png",
+      "line": "まだ終わりじゃないもん…ね？"
+    },
+    {
+      "id": 37,
+      "expression": "defeat_sad_smile.png",
+      "line": "今日は負けちゃったけど、君はすごく頑張ったよ！"
+    },
+    {
+      "id": 38,
+      "expression": "defeat_teary_eyes.png",
+      "line": "勝ちも負けも全部、大切な経験だもんね！"
+    },
+    {
+      "id": 39,
+      "expression": "defeat_sad_smile.png",
+      "line": "うまくいかない時もあるよ。でも、その分、次はもっと輝ける！"
+    },
+    {
+      "id": 40,
+      "expression": "defeat_frustrated_grit_teeth.png",
+      "line": "悔しい気持ち、大事にしよう。それが力になるんだから！"
+    },
+    {
+      "id": 41,
+      "expression": "defeat_teary_eyes.png",
+      "line": "結果だけじゃないよ、ここまで頑張ったことがすごいんだ！"
+    },
+    {
+      "id": 42,
+      "expression": "defeat_downcast_eyes.png",
+      "line": "今日はこの悔しさ、おぼえておこうね…次こそ一緒に笑おう！"
+    },
+    {
+      "id": 43,
+      "expression": "defeat_teary_eyes.png",
+      "line": "私は信じてるよ。だからもう一回、立ち上がろう！"
+    },
+    {
+      "id": 44,
+      "expression": "defeat_frustrated_grit_teeth.png",
+      "line": "負けたっていいんだよ。大事なのは、どう次に向かうかだよ！"
+    },
+    {
+      "id": 45,
+      "expression": "defeat_crying_open_mouth.png",
+      "line": "泣いてもいい、悔しがってもいい。でも、あきらめないで！"
+    },
+    {
+      "id": 46,
+      "expression": "defeat_frustrated_grit_teeth.png",
+      "line": "この負け、絶対に忘れない。それが次の勝利につながるんだから！"
+    },
+    {
+      "id": 47,
+      "expression": "defeat_sad_smile.png",
+      "line": "うん、今日は負けちゃったけど…私は君の味方だよ！"
+    },
+    {
+      "id": 48,
+      "expression": "defeat_teary_eyes.png",
+      "line": "悔しいよね…でも、また一緒にがんばろうね！"
+    },
+    {
+      "id": 49,
+      "expression": "defeat_sad_smile.png",
+      "line": "次の勝負が楽しみだよ。君なら絶対やれる！"
+    },
+    {
+      "id": 50,
+      "expression": "defeat_crying_open_mouth.png",
+      "line": "泣き顔もかわいいけど…次は笑顔、見せてくれるんでしょ？"
+    }
+  ]
+}

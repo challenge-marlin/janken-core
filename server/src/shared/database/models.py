@@ -19,19 +19,19 @@ class User(Base):
     """ユーザー情報テーブル"""
     __tablename__ = "users"
     
-    management_code = Column(Integer, autoincrement=True, unique=True, index=True)
+    management_code = Column(BIGINT, autoincrement=True, unique=True, index=True)
     user_id = Column(String(50), primary_key=True)
     email = Column(String(255), nullable=False, unique=True, index=True)  # Magic Link認証で必須
     nickname = Column(String(100), nullable=False)
     name = Column(String(50), nullable=True)
-    role = Column(String(20), nullable=False, default='user')
+    role = Column(Enum('user', 'developer', 'admin', name='user_role'), nullable=True, default='user')
     profile_image_url = Column(String(500), nullable=True)
     title = Column(String(100), nullable=True, default='じゃんけんプレイヤー')
     alias = Column(String(100), nullable=True)
     is_active = Column(Boolean, default=True)
     is_banned = Column(Integer, default=0)  # 0:未設定、1:設定、2:復帰
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=func.now(), nullable=True)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=True)
     
     # リレーションシップ
     magic_links = relationship("MagicLink", back_populates="user")
@@ -200,10 +200,14 @@ class LoginAttempt(Base):
 
 
 class UserStats(Base):
-    """ユーザー統計テーブル"""
+    """ユーザー統計テーブル（統合版）"""
     __tablename__ = "user_stats"
     
-    user_id = Column(String(50), ForeignKey("users.user_id"), primary_key=True)
+    # 基本フィールド
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    user_id = Column(String(50), ForeignKey("users.user_id"), nullable=False, index=True)
+    
+    # 基本統計（003から）
     total_matches = Column(Integer, default=0)
     total_wins = Column(Integer, default=0)
     total_losses = Column(Integer, default=0)
@@ -212,21 +216,40 @@ class UserStats(Base):
     current_streak = Column(Integer, default=0)
     best_streak = Column(Integer, default=0)
     total_rounds_played = Column(Integer, default=0)
+    
+    # 手の統計（003から）
     rock_count = Column(Integer, default=0)
     paper_count = Column(Integer, default=0)
     scissors_count = Column(Integer, default=0)
     favorite_hand = Column(String(10), nullable=True)
-    recent_hand_results_str = Column(String(255), default='')
+    
+    # バトル詳細（003から）
     average_battle_duration_seconds = Column(Integer, default=0)
     last_battle_at = Column(DateTime, nullable=True)
-    title = Column(String(50), default='')
+    
+    # 称号・二つ名（003・005共通）
+    title = Column(String(100), default='')
     available_titles = Column(String(255), default='')
-    alias = Column(String(50), default='')
-    show_title = Column(Boolean, default=True)
-    show_alias = Column(Boolean, default=True)
+    alias = Column(String(100), default='')
+    show_title = Column(Integer, default=1)  # tinyint(1)として扱う
+    show_alias = Column(Integer, default=1)  # tinyint(1)として扱う
+    
+    # ランキング（003・005共通）
     user_rank = Column(String(20), default='no_rank')
-    last_reset_at = Column(Date, nullable=False, default=func.current_date())
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    
+    # 日次統計（005から）
+    daily_wins = Column(Integer, default=0)
+    daily_ranking = Column(Integer, nullable=True)
+    
+    # 最近の結果（003・005共通）
+    recent_hand_results_str = Column(String(255), default='')
+    
+    # リセット管理（003から）
+    last_reset_at = Column(Date, nullable=False, default=func.curdate())
+    
+    # タイムスタンプ
+    created_at = Column(DateTime, default=func.now(), nullable=True)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=True)
     
     # リレーションシップ
     user = relationship("User", back_populates="stats")
@@ -234,52 +257,44 @@ class UserStats(Base):
     def reset_daily_stats(self):
         """日次統計をリセット"""
         self.daily_wins = 0
-        self.daily_losses = 0
-        self.daily_draws = 0
-        self.last_reset_at = datetime.utcnow()
+        self.daily_ranking = None
+        self.last_reset_at = datetime.utcnow().date()
     
     def add_hand_result(self, hand: str, result: str):
         """手と結果を追加"""
-        # 手の統計を更新
         if hand == 'rock':
-            self.hand_stats_rock += 1
-        elif hand == 'scissors':
-            self.hand_stats_scissors += 1
+            self.rock_count += 1
         elif hand == 'paper':
-            self.hand_stats_paper += 1
+            self.paper_count += 1
+        elif hand == 'scissors':
+            self.scissors_count += 1
         
         # お気に入りの手を更新
-        total_hands = {
-            'rock': self.hand_stats_rock,
-            'scissors': self.hand_stats_scissors,
-            'paper': self.hand_stats_paper
-        }
-        self.favorite_hand = max(total_hands.items(), key=lambda x: x[1])[0]
+        if self.rock_count > self.paper_count and self.rock_count > self.scissors_count:
+            self.favorite_hand = 'rock'
+        elif self.paper_count > self.rock_count and self.paper_count > self.scissors_count:
+            self.favorite_hand = 'paper'
+        elif self.scissors_count > self.rock_count and self.scissors_count > self.paper_count:
+            self.favorite_hand = 'scissors'
         
-        # 直近の手と結果を更新
-        hand_map = {'rock': 'G', 'scissors': 'S', 'paper': 'P'}
-        result_map = {'win': 'W', 'lose': 'L', 'draw': 'D'}
+        # 最近の結果を更新
+        if self.recent_hand_results_str:
+            self.recent_hand_results_str += f",{result}"
+        else:
+            self.recent_hand_results_str = result
         
-        new_result = f"{hand_map[hand]}:{result_map[result]}"
-        results = self.recent_hand_results_str.split(',') if self.recent_hand_results_str else []
-        results.append(new_result)
-        if len(results) > 5:
-            results = results[-5:]
-        self.recent_hand_results_str = ','.join(results)
-        
-        # 勝敗統計を更新
-        if result == 'win':
-            self.daily_wins += 1
-            self.total_wins += 1
-            self.current_win_streak += 1
-            if self.current_win_streak > self.max_win_streak:
-                self.max_win_streak = self.current_win_streak
-        elif result == 'lose':
-            self.daily_losses += 1
-            self.current_win_streak = 0
-        else:  # draw
-            self.daily_draws += 1
-            # 引き分けは連勝を継続
+        # 255文字を超える場合は古いものを削除
+        if len(self.recent_hand_results_str) > 255:
+            parts = self.recent_hand_results_str.split(',')
+            if len(parts) > 10:  # 最新10件を保持
+                self.recent_hand_results_str = ','.join(parts[-10:])
+    
+    def update_win_rate(self):
+        """勝率を更新"""
+        if self.total_matches > 0:
+            self.win_rate = (self.total_wins / self.total_matches) * 100
+        else:
+            self.win_rate = 0.00
 
 
 # ユーティリティ関数

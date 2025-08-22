@@ -182,6 +182,9 @@
         <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 14px;">
             <strong>🆕 最新版:</strong> 統一されたエラーハンドリング、型安全性、リポジトリパターン対応
         </div>
+        <div style="background: rgba(255,193,7,0.1); padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 14px;">
+            <strong>🔄 DB連携対応:</strong> ハードコーディングされたIDは使用せず、完全DB連携のテストユーザーを使用
+        </div>
     </div>
 
     <!-- 環境設定 -->
@@ -190,6 +193,8 @@
         <div class="form-group">
             <label for="apiBaseUrl">APIベースURL:</label>
             <select id="apiBaseUrl">
+                <option value="http://192.168.0.150">開発環境 (Nginx経由 - 192.168.0.150:80)</option>
+                <option value="http://192.168.0.150:3000">開発環境 (直接 - 192.168.0.150:3000)</option>
                 <option value="http://localhost">開発環境 (Nginx経由 - localhost:80)</option>
                 <option value="http://localhost:3000">開発環境 (直接 - localhost:3000)</option>
                 <option value="http://192.168.1.180">開発環境 (Nginx経由 - 192.168.1.180:80)</option>
@@ -354,77 +359,326 @@
 
     <!-- サンプルユーザー情報表示 -->
     <div class="test-section">
-        <h2>📋 サンプルユーザー情報（テスト用）</h2>
+        <h2>📋 サンプルユーザー情報（DB連携版）</h2>
         <div style="background: #e8f5e8; border: 1px solid #4caf50; border-radius: 5px; padding: 15px; margin-bottom: 15px;">
-            <strong>🔧 開発環境専用:</strong> 以下のサンプルユーザーでID/パスワード認証をテストできます
+            <strong>🆕 DB連携版:</strong> 以下のテストユーザーはデータベースに実際に存在し、パスワードハッシュ認証に対応
         </div>
         
         <div class="grid">
             <div>
-                <h3>🧪 テストユーザー（Magic Link認証用）</h3>
+                <h3>🧪 テストユーザー（DB連携版）</h3>
                 <div style="background: #f0f2ff; border: 1px solid #667eea; border-radius: 5px; padding: 15px;">
                     <table style="width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr style="background: #667eea; color: white;">
                                 <th style="padding: 8px; text-align: left;">ユーザー番号</th>
+                                <th style="padding: 8px; text-align: left;">ユーザーID</th>
                                 <th style="padding: 8px; text-align: left;">メールアドレス</th>
                                 <th style="padding: 8px; text-align: left;">ニックネーム</th>
+                                <th style="padding: 8px; text-align: left;">パスワード</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd;">1</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">test1@example.com</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">テストユーザー1</td></tr>
-                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd;">2</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">test2@example.com</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">テストユーザー2</td></tr>
-                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd;">3</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">test3@example.com</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">テストユーザー3</td></tr>
-                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd;">4</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">test4@example.com</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">テストユーザー4</td></tr>
-                            <tr><td style="padding: 5px;">5</td><td style="padding: 5px;">test5@example.com</td><td style="padding: 5px;">テストユーザー5</td></tr>
+                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd;">1</td><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">test_user_1</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">test1@example.com</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">じゃんけんマスター</td><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">password123</td></tr>
+                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd;">2</td><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">test_user_2</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">test2@example.com</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">バトルクイーン</td><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">password123</td></tr>
+                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd;">3</td><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">test_user_3</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">test3@example.com</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">勝負師</td><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">password123</td></tr>
+                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd;">4</td><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">test_user_4</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">test4@example.com</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">新米戦士</td><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">password123</td></tr>
+                            <tr><td style="padding: 5px; font-family: monospace;">5</td><td style="padding: 5px; font-family: monospace;">test_user_5</td><td style="padding: 5px;">test5@example.com</td><td style="padding: 5px;">伝説のプレイヤー</td><td style="padding: 5px; font-family: monospace;">password123</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
             
             <div>
-                <h3>🔑 サンプルユーザー（ID/パスワード認証用）</h3>
+                <h3>🔑 認証方法（DB連携版）</h3>
                 <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 15px;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background: #ff9800; color: white;">
-                                <th style="padding: 8px; text-align: left;">ユーザーID</th>
-                                <th style="padding: 8px; text-align: left;">パスワード</th>
-                                <th style="padding: 8px; text-align: left;">ニックネーム</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">sample_user_1</td><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">password123</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">サンプルユーザー1</td></tr>
-                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">sample_user_2</td><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">password456</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">サンプルユーザー2</td></tr>
-                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">sample_user_3</td><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">password789</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">サンプルユーザー3</td></tr>
-                            <tr><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">admin_user</td><td style="padding: 5px; border-bottom: 1px solid #ddd; font-family: monospace;">admin123</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">管理者ユーザー</td></tr>
-                            <tr><td style="padding: 5px; font-family: monospace;">demo_user</td><td style="padding: 5px; font-family: monospace;">demo123</td><td style="padding: 5px;">デモユーザー</td></tr>
-                        </tbody>
-                    </table>
+                    <h4>📧 Magic Link認証</h4>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li>上記メールアドレスでMagic Linkをリクエスト</li>
+                        <li>データベースに存在するユーザーのみ認証可能</li>
+                        <li>セキュリティ強化されたトークン管理</li>
+                    </ul>
+                    
+                    <h4>🔐 パスワード認証</h4>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li>ユーザーID: test_user_1 〜 test_user_5</li>
+                        <li>パスワード: password123（全ユーザー共通）</li>
+                        <li>ハッシュ化されたパスワードで安全な認証</li>
+                    </ul>
+                    
+                    <h4>🧪 テストユーザーログイン</h4>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li>ユーザー番号（1-5）を選択してログイン</li>
+                        <li>データベースから実際のユーザー情報を取得</li>
+                        <li>完全なプロフィール・統計データ表示</li>
+                    </ul>
                 </div>
             </div>
         </div>
         
         <div style="margin-top: 15px; padding: 10px; background: #f9f9f9; border-radius: 5px;">
-            <h4>💡 使用方法</h4>
+            <h4>💡 使用方法（DB連携版）</h4>
             <ul style="margin: 5px 0; padding-left: 20px; font-size: 14px;">
                 <li><strong>Magic Link認証:</strong> 上記メールアドレスでMagic Linkをリクエスト</li>
                 <li><strong>テストユーザーログイン:</strong> ユーザー番号（1-5）を選択してログイン</li>
-                <li><strong>ID/パスワード認証:</strong> 上記ユーザーID・パスワードを入力して「ユーザー情報認証テスト」を実行</li>
+                <li><strong>パスワード認証:</strong> ユーザーID・パスワードを入力して認証</li>
                 <li><strong>開発用ログイン:</strong> 任意のメールアドレスで開発者/管理者モードでログイン</li>
             </ul>
         </div>
         
-        <div style="margin-top: 10px; padding: 10px; background: #ffe6e6; border: 1px solid #ff9999; border-radius: 5px; font-size: 13px;">
-            <strong>⚠️ 重要:</strong> 
+        <div style="margin-top: 10px; padding: 10px; background: #e8f5e8; border: 1px solid #4caf50; border-radius: 5px; font-size: 13px;">
+            <strong>✅ 新機能:</strong> 
             <ul style="margin: 5px 0; padding-left: 20px;">
-                <li>これらのサンプルユーザーは開発環境専用です</li>
+                <li>データベース連携による実際のユーザー認証</li>
+                <li>パスワードハッシュ認証によるセキュリティ強化</li>
+                <li>ユーザープロフィール・統計データの完全連携</li>
+                <li>セッション管理・JWTトークン管理の強化</li>
+            </ul>
+        </div>
+        
+        <div style="margin-top: 10px; padding: 10px; background: #ffe6e6; border: 1px solid #ff9999; border-radius: 5px; font-size: 13px;">
+            <strong>⚠️ 注意:</strong> 
+            <ul style="margin: 5px 0; padding-left: 20px;">
+                <li>これらのテストユーザーは開発環境専用です</li>
                 <li>本番環境では使用できません</li>
-                <li>パスワードは平文で管理されているため、実際のシステムでは使用しないでください</li>
+                <li>パスワードはハッシュ化されて安全に管理されています</li>
             </ul>
         </div>
     </div>
 
-    <script src="auth-test.js?v=1.2"></script>
+    <script src="auth-test.js?v=2.0"></script>
+
+    <!-- Redis対応Magic Link管理システム説明 -->
+    <div class="test-section">
+        <h2>🔧 Redis対応Magic Link管理システム</h2>
+        <div style="background: #e8f5e8; border: 1px solid #4caf50; border-radius: 5px; padding: 15px; margin-bottom: 15px;">
+            <strong>🆕 Redis一本化:</strong> クラス変数の問題を解決し、永続的で信頼性の高いトークン管理を実現
+        </div>
+        
+        <div class="grid">
+            <div>
+                <h3>🔄 Magic Link認証フロー（Redis対応版）</h3>
+                <div style="background: #f0f2ff; border: 1px solid #667eea; border-radius: 5px; padding: 15px;">
+                    <h4>📧 1. Magic Linkリクエスト</h4>
+                    <ol style="margin: 5px 0; padding-left: 20px;">
+                        <li>ユーザーがメールアドレスを入力</li>
+                        <li>サーバーがトークンを生成（32文字のランダム文字列）</li>
+                        <li><strong>Redisにトークンを保存</strong>（キー: <code>magic_link:{token_hash}</code>）</li>
+                        <li>TTL: 24時間（1440分）で自動削除</li>
+                        <li>開発環境ではトークンを直接返却</li>
+                    </ol>
+                    
+                    <h4>🔐 2. Magic Link検証</h4>
+                    <ol style="margin: 5px 0; padding-left: 20px;">
+                        <li>ユーザーがトークンを入力</li>
+                        <li>サーバーがトークンをハッシュ化</li>
+                        <li><strong>Redisからトークンデータを取得</strong></li>
+                        <li>有効期限・使用済みチェック</li>
+                        <li>検証成功時、トークンを使用済みにマーク</li>
+                        <li>JWTトークンを生成・返却</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div>
+                <h3>💾 Redisデータ構造</h3>
+                <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 15px;">
+                    <h4>キー形式</h4>
+                    <code>magic_link:{token_hash}</code>
+                    
+                    <h4>保存データ（JSON形式）</h4>
+                    <pre style="background: #f8f9fa; padding: 10px; border-radius: 3px; font-size: 12px;">
+{
+    "email": "test@example.com",
+    "token": "03dd341054f4436e9669...",
+    "expires_at": "2025-08-22T12:00:00",
+    "used": false,
+    "created_at": "2025-08-22T11:30:00"
+}</pre>
+                    
+                    <h4>TTL管理</h4>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li>有効期限: 24時間（1440分）</li>
+                        <li>自動削除: RedisのTTLで期限切れトークンを自動クリーンアップ</li>
+                        <li>永続性: サーバー再起動後もデータ保持</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 15px; padding: 15px; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 5px;">
+            <h3>🔍 従来のクラス変数方式との違い</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <thead>
+                    <tr style="background: #90caf9; color: white;">
+                        <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">項目</th>
+                        <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">従来方式（クラス変数）</th>
+                        <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">新方式（Redis）</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>データ永続性</strong></td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">❌ サーバー再起動で消失</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">✅ 永続的に保持</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>インスタンス間共有</strong></td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">❌ リクエストごとにリセット</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">✅ 全インスタンスで共有</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>スケーラビリティ</strong></td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">❌ 単一サーバーでのみ有効</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">✅ マルチサーバー対応</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>自動クリーンアップ</strong></td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">❌ 手動管理が必要</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">✅ TTLで自動削除</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- JWT管理システム説明 -->
+    <div class="test-section">
+        <h2>🎫 JWT管理システム（DB連携版）</h2>
+        <div style="background: #e8f5e8; border: 1px solid #4caf50; border-radius: 5px; padding: 15px; margin-bottom: 15px;">
+            <strong>🆕 完全DB連携:</strong> JWTトークンの発行・検証・管理をデータベースで一元管理
+        </div>
+        
+        <div class="grid">
+            <div>
+                <h3>🔐 JWT認証フロー</h3>
+                <div style="background: #f0f2ff; border: 1px solid #667eea; border-radius: 5px; padding: 15px;">
+                    <h4>1. 認証成功時</h4>
+                    <ol style="margin: 5px 0; padding-left: 20px;">
+                        <li>JWTアクセストークン生成（有効期限: 15分）</li>
+                        <li>リフレッシュトークン生成（有効期限: 30日）</li>
+                        <li><strong>DBにセッション情報を保存</strong></li>
+                        <li>Redisにセッションキャッシュを保存</li>
+                    </ol>
+                    
+                    <h4>2. アクセストークン更新</h4>
+                    <ol style="margin: 5px 0; padding-left: 20px;">
+                        <li>リフレッシュトークンで検証</li>
+                        <li>新しいアクセストークンを生成</li>
+                        <li>セッション情報を更新</li>
+                    </ol>
+                    
+                    <h4>3. ログアウト時</h4>
+                    <ol style="margin: 5px 0; padding-left: 20px;">
+                        <li>JWTブラックリストに追加</li>
+                        <li>セッションを無効化</li>
+                        <li>Redisキャッシュを削除</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div>
+                <h3>💾 データベーステーブル構成</h3>
+                <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 15px;">
+                    <h4>sessions（セッション管理）</h4>
+                    <ul style="margin: 5px 0; padding-left: 20px; font-size: 13px;">
+                        <li><code>session_id</code>: セッション一意識別子</li>
+                        <li><code>user_id</code>: ユーザーID</li>
+                        <li><code>device_id</code>: 端末識別</li>
+                        <li><code>is_revoked</code>: 失効フラグ</li>
+                    </ul>
+                    
+                    <h4>refresh_tokens（リフレッシュトークン）</h4>
+                    <ul style="margin: 5px 0; padding-left: 20px; font-size: 13px;">
+                        <li><code>token_id</code>: トークン一意識別子</li>
+                        <li><code>session_id</code>: セッションとの紐付け</li>
+                        <li><code>expires_at</code>: 有効期限</li>
+                        <li><code>is_revoked</code>: 失効フラグ</li>
+                    </ul>
+                    
+                    <h4>jwt_blacklist（JWT即時失効）</h4>
+                    <ul style="margin: 5px 0; padding-left: 20px; font-size: 13px;">
+                        <li><code>token_hash</code>: ハッシュ化されたJWT</li>
+                        <li><code>expires_at</code>: 失効日時</li>
+                        <li>ログアウト時の即座無効化</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 15px; padding: 15px; background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 5px;">
+            <h3>🔒 セキュリティ機能</h3>
+            <div class="grid">
+                <div>
+                    <h4>🛡️ セッション管理</h4>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li><strong>同時ログイン制限</strong>: 端末ごとのセッション管理</li>
+                        <li><strong>セッション無効化</strong>: 管理者による強制ログアウト</li>
+                        <li><strong>非アクティブタイムアウト</strong>: 7日間アクセスなしで自動失効</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>🚫 不正アクセス対策</h4>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li><strong>JWTブラックリスト</strong>: ログアウト済みトークンの即座無効化</li>
+                        <li><strong>トークンローテーション</strong>: 使用時に新しいリフレッシュトークンを発行</li>
+                        <li><strong>IPアドレス記録</strong>: セッション作成元の追跡</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- システム全体の認証フロー -->
+    <div class="test-section">
+        <h2>🔄 システム全体の認証フロー</h2>
+        <div style="background: #e8f5e8; border: 1px solid #4caf50; border-radius: 5px; padding: 15px; margin-bottom: 15px;">
+            <strong>🎯 統合認証システム:</strong> Magic Link + JWT + パスワード（任意）の組み合わせで最高レベルのセキュリティを実現
+        </div>
+        
+        <div style="background: #f0f2ff; border: 1px solid #667eea; border-radius: 5px; padding: 20px;">
+            <h3>📋 認証方式の選択</h3>
+            <div class="grid">
+                <div>
+                    <h4>🔗 Magic Link認証（推奨）</h4>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li><strong>セキュリティ</strong>: パスワード不要、ワンタイムトークン</li>
+                        <li><strong>利便性</strong>: メールクリックでログイン</li>
+                        <li><strong>管理</strong>: Redisで永続的・信頼性の高い管理</li>
+                        <li><strong>有効期限</strong>: 24時間（設定可能）</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>🔐 パスワード認証（オプション）</h4>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li><strong>セキュリティ</strong>: Argon2idハッシュ、ソルト自動生成</li>
+                        <li><strong>利便性</strong>: 従来のログイン方式</li>
+                        <li><strong>管理</strong>: データベースで安全に管理</li>
+                        <li><strong>設定</strong>: 任意で有効化可能</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3>🔄 認証後のフロー</h3>
+            <ol style="margin: 15px 0; padding-left: 20px;">
+                <li><strong>JWT発行</strong>: アクセストークン（15分）+ リフレッシュトークン（30日）</li>
+                <li><strong>セッション作成</strong>: データベースにセッション情報を保存</li>
+                <li><strong>Redisキャッシュ</strong>: 高速アクセス用のセッションキャッシュ</li>
+                <li><strong>アクセス制御</strong>: 各APIエンドポイントでのJWT検証</li>
+                <li><strong>自動更新</strong>: リフレッシュトークンによる自動トークン更新</li>
+            </ol>
+        </div>
+        
+        <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px;">
+            <h3>💡 開発環境での利点</h3>
+            <ul style="margin: 5px 0; padding-left: 20px;">
+                <li><strong>Redis一本化</strong>: クラス変数の問題を完全解決</li>
+                <li><strong>永続性</strong>: サーバー再起動後もトークンが保持される</li>
+                <li><strong>デバッグ性</strong>: Redis内のトークン状況をリアルタイム確認可能</li>
+                <li><strong>拡張性</strong>: 将来的なマルチサーバー対応も容易</li>
+                <li><strong>本番環境互換</strong>: 開発環境と本番環境で同じ動作</li>
+            </ul>
+        </div>
+    </div>
 </body>
 </html> 

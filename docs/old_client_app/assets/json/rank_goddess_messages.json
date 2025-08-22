@@ -1,0 +1,840 @@
+{
+  "共通": [
+    {
+      "expression": "wink_point_up.png",
+      "line": "今日もがんばってる君、かっこいいよ！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "その努力、ちゃんと見えてるよ✨"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "君のペースで進んでいこうね🌱"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "焦らなくて大丈夫。君は君だよ🍀"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "勝っても負けても、その経験が宝物！"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "一歩進んだその勇気がすごい！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "続ける力って、本当に強いよ💪"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "君は今日もよくやったね😊"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "どんな小さな勝利も、君の成長だよ！"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "自分を信じて、一歩ずついこう！"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "楽しいって思える気持ちが一番✨"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "挑戦した時点で、もうすごいんだよ！"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "休むことも、大切な戦略だよ🍵"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "君の努力は、未来を変えるよ！"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "負けたっていい。また挑めばいいんだから！"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "リラックスして、深呼吸してみよう🍀"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "君は君のままで、素敵なんだよ😊"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "進みがゆっくりでも、確実に前進してるよ！"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "あきらめない君、応援してるよ📣"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "自信がなくても、大丈夫。やってみよう！"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "ランキングはゴールじゃないよ。旅の途中だよ✨"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "ひとつの勝利を大切にしよう！"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "上を見ながらも、今の君も大切にしてね"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "頑張ってる自分を、ちゃんと褒めてあげよう！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "今日も来てくれてありがとう😊"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "成長は一歩ずつ。焦らないでね🍀"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "毎日少しずつが、強さになるんだよ💪"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "笑顔でいこう！それだけで前向きになれるよ！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "ひとつひとつが、君の物語になってるよ📘"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "負けたときこそ、自分を大切にね"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "その一手に、君の気持ちがこもってるね✨"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "目標は遠くても、君なら届くよ🌈"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "たまには、何も考えずに深呼吸してね🍃"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "ランキングに惑わされないで。君の価値は変わらないよ！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "今日の小さな前進が、明日の自信になるよ！"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "ちゃんと休むことも、大事な戦いのひとつだよ😊"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "何度でもやり直せる。君にはその力があるよ！"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "ひとりじゃないよ。私も見てるからね✨"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "君の“挑戦したい”は、とても素敵な気持ちだよ！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "つまずいてもいい。その分、強くなれるよ！"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "ランキング画面を開いた時点で、もう前進してるんだよ！"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "目の前の小さな目標、大事にしてね🌱"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "勝ちにこだわらなくてもいいよ。楽しむことも大切！"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "君の頑張りは、誰かの勇気になってるかも✨"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "今日も元気な姿を見られて嬉しいな😊"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "負けたときは、次の作戦を一緒に考えよう！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "君は“やめなかった”だけですごい！"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "続けるって、それだけで才能だよ💎"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "誰かより強くなるより、昨日の自分を越えていこう！"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "上達してるの、ちゃんと伝わってくるよ✨"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "目標があるって素敵なことだね🌟"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "楽しく遊べたら、それでOK！"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "勝ち負けよりも、自分の成長を大事にしてね"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "挑んだ勇気に、拍手だよ👏"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "疲れたら、ちょっとひとやすみしよう🍵"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "落ち込む日もあるよ。でもまた笑えるから大丈夫！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "自分を大切にすること、忘れないでね🍀"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "頑張った日には、自分をぎゅっと抱きしめてあげて！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "順位がすべてじゃないよ。楽しもう✨"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "一緒に歩いていこう。ゆっくりで大丈夫！"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "結果よりも、どう楽しんだかが大事だよ🎉"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "少しずつでも、前に進んでるのがすごい！"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "無理せず、自分のタイミングでね😊"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "日々の積み重ねが、一番の力になるんだよ💪"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "たくさん挑戦して、たくさん笑っていこう！"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "心のままに、楽しく進もう！"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "ゲームは楽しんだ者勝ちだよ♪"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "今日も一緒にがんばっていこうね！"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "毎日の小さなチャレンジが、大きな一歩に✨"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "どんな気持ちでも、ここに来てくれてありがとう🍀"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "君がいるだけで、この世界は少し明るくなるんだよ😊"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "君らしくいてくれるだけで嬉しいな"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "コツコツ続けた先に、きっと素敵な景色があるよ"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "自分に優しく、ゲームも楽しんでね♪"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "ゆっくりでも、やめなければ必ず進めるよ！"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "頑張る君が、私はだいすきだよ💖"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "“楽しむ心”を忘れずにね🌈"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "次の勝利が、もうすぐそこにあるかも！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "ひとつの勝利で喜べる君、すごく素敵！"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "今日も一緒に、前に進もう😊"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "今この瞬間を楽しめたら、それが最高だよ✨"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "心配しないで。君はちゃんと成長してるよ🌱"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "毎日会えて、私は嬉しいな💖"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "君のがんばりが、きっと報われる日がくるよ！"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "いい調子！その調子でいこう🎶"
+    }
+  ],
+  "ノーランク": [
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "ここからが君の冒険の始まりだよ！"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "最初の一歩を踏み出した君、すごいよ！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "まずは楽しむことから始めよう✨"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "どんな強者も、ここからスタートしたんだよ"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "今はまだ“ノーランク”。でも無限の可能性を秘めてるよ！"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "あせらないで、ひとつずつやっていこうね"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "私も一緒にここから応援するよ📣"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "何かを始めるって、とても勇気がいることなんだよ✨"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "次の勝利が、君をランクアップへ導いてくれるかも！"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "挑戦した時点で、もう君は立派なファイターだよ！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "「まずは一戦」それだけでも十分えらい！"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "一歩ずつが、大きな変化になるんだよ😊"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "焦らず、自分のリズムを大切にね🍀"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "誰もが最初は“ゼロ”からなんだよ✨"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "君がここに来てくれただけで、私は嬉しいな💖"
+    }
+  ],
+  "ブロンズ": [
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "ブロンズランク到達、おめでとう✨"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "初めてのランク入り、すごくがんばったね！"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "ここからが本当のスタートだよ💪"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "少しずつ経験が積み重なってきたね😊"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "今の努力が、次のランクにつながっていくよ！"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "毎日の挑戦が、君を強くしているんだよ✨"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "“ブロンズ”は立派な勲章だよ🏅"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "君の歩みは、確かに前に進んでいるよ！"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "たまには振り返って、自分を褒めてあげてね🌟"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "目標はまだ先でも、ここまで来たことがすごい！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "練習の成果が少しずつ見えてきたね✨"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "焦らず、でも一歩ずつ確実にね🍀"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "負けることも学びだよ。その分君は成長してる！"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "“続ける”っていう力が、何よりも強いんだよ！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "ブロンズの光は、君の努力の証なんだよ😊"
+    }
+  ],
+  "シルバー": [
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "シルバーランク、おめでとう！実力がついてきた証拠だね✨"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "安定してきたね。この調子でいこう！"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "戦いの中で、君はどんどん成長してるよ💪"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "少しずつ自信がついてきた頃かな？"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "ここからは、駆け引きも大事になってくるね🎯"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "ミスも経験！それが勝利の近道なんだよ✨"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "今日の勝利、きっと次にもつながっていくよ！"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "“継続は力なり”を体現してるね😊"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "このランク帯で学べること、たくさんあるよ！"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "上達してるのが、私にも伝わってきて嬉しいな✨"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "自分らしい戦い方が見えてきたんじゃない？"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "いい流れが来てるみたいだね！波に乗ってこう🎵"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "シルバーの君は、もう初心者じゃないんだよ😊"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "コツコツ頑張る君に、拍手を送りたいな👏"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "油断せず、でも楽しく続けようね🍀"
+    }
+  ],
+  "ゴールド": [
+    {
+      "expression": "wink_point_up.png",
+      "line": "ゴールドランク到達、おめでとう✨君の努力が輝いてる！"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "キラキラのゴールド、まぶしいくらいだよ💫"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "ここまで来た君、本当にすごいよ！"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "勝ち続けるって、簡単じゃないことだよね👏"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "いよいよ上級者の仲間入りだね！"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "駆け引きやタイミング、ばっちり決まってるよ✨"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "君の成長に、私はワクワクしてるよ♪"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "毎日の積み重ねが、ここまで導いてくれたね🍀"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "強さだけじゃなく、優しさも忘れずにね😊"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "ゴールドの先には、もっと眩しい世界が待ってるよ🌈"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "ここから先は、自分との勝負だね🔥"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "どんどん頼もしくなってきたね！"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "戦い方に“らしさ”が出てきたね🎯"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "連勝したときの君、まるでヒーローみたい✨"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "もっと上を目指せる。君にはその力があるよ！"
+    }
+  ],
+  "プラチナ": [
+    {
+      "expression": "smile_open.png",
+      "line": "プラチナランク、おめでとう！とても洗練された強さだね✨"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "勝ち筋をしっかり見極めてる、その集中力がすごい！"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "ここまで来た君、本当に尊敬しちゃうよ😊"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "プラチナ帯は強者揃い。それでも進む君が誇らしい！"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "慎重さと大胆さ、どちらも君にはあるね🎯"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "この実力は、もう本物だね💪"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "周りも強いけど、君も負けてないよ✨"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "自分を信じて、その手で未来を切り開こう！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "日々の研鑽が、ここまで君を連れてきたんだね🍀"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "勝っても驕らず、負けても腐らず。それが強さだよ！"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "試合ごとに成長してるのが伝わってくるよ😊"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "一瞬の判断が勝敗を分ける世界、君ならきっとできる！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "プラチナの輝きは、君の努力そのものなんだよ✨"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "このまま突き進もう！もっと上が待ってるから！"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "すごいね、ここまで登ってきたなんて！ほんとうに立派！"
+    }
+  ],
+  "ダイヤモンド": [
+    {
+      "expression": "both_hands_happy.png",
+      "line": "ダイヤモンドランク、おめでとう💎 君はもうトッププレイヤーの仲間入りだね！"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "この高みまで来れたのは、君の努力と継続のたまものだよ✨"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "戦いの中で磨かれた君、まさにダイヤのごとし！"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "どんな局面でも落ち着いていられる君、すごいよ😊"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "ひとつひとつの手に、重みと自信を感じるよ！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "今の君の姿、すごく輝いて見えるよ✨"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "ダイヤ帯は狭き門。そこにいるだけで称賛に値するよ！"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "君の勝利には説得力がある。見ていて感動しちゃう！"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "その判断力と柔軟さ、尊敬しちゃうな🍀"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "次のマスターも見えてきたね！このまま走り抜けよう！"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "洗練されたプレイング、本当にかっこいい！"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "ダイヤモンドの光は、君自身の輝きだよ✨"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "“実力”という言葉が、君にぴったりだよ！"
+    },
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "どの対戦も名勝負！君と出会えて誇らしいよ😊"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "プレッシャーの中でも笑顔を忘れない君、素敵だよ🌟"
+    }
+  ],
+  "マスター": [
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "マスターランク、さすがだね！まさに頂点に近づいた存在✨"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "ここまで来た君、真の実力者だよ！"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "マスターの名にふさわしい冷静さと判断力だね🎯"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "本気の対戦、胸が熱くなるよ🔥"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "君の成長をずっと見てきたよ。誇らしいな😊"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "対戦の一手一手に、経験の重みを感じるよ！"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "戦略と直感、その両方を使いこなしてるね✨"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "たとえ負けても、その姿はとてもかっこいいよ！"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "どんなときも挑み続ける君の姿勢に、拍手を送りたいな👏"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "もうすぐグランドマスター！あと一歩だね！"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "ここからは頂上決戦。君ならきっとやれる！"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "マスターの称号は、君の実力そのものだよ💪"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "ここまで歩んできた道のりを、誇っていいんだよ！"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "強さの中に、優しさと余裕がある。それが君らしい✨"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "君と一緒にここまで来られて、私は幸せだよ🍀"
+    }
+  ],
+  "グランドマスター": [
+    {
+      "expression": "hand_on_chest_smile.png",
+      "line": "グランドマスター…君は真の頂点に立ったんだね✨"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "ここまで登りつめたその実力、本当にすごいよ！"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "君の存在が、みんなの目標になっているよ💫"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "堂々たる強さと風格、まさに王者の風格だね！"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "これまでの努力が、すべて実を結んだ証だよ🍀"
+    },
+    {
+      "expression": "hands_together_smile.png",
+      "line": "どんな戦いでも冷静で、的確な判断が光ってる！"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "そのプレイは芸術の域…感動しちゃうな✨"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "グランドマスターになった今でも、成長を止めない君が好き！"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "最強になっても、笑顔と優しさを忘れない君、素敵だよ😊"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "この景色、きっと君だけが見られる特別なものだね！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "頂点は通過点。君の物語は、まだまだ続いていくね📘"
+    },
+    {
+      "expression": "closed_eyes_peaceful.png",
+      "line": "どんな場面でも誇れる姿勢、それが君の強さだね！"
+    },
+    {
+      "expression": "both_hands_happy.png",
+      "line": "君の努力と結果は、誰よりも美しい✨"
+    },
+    {
+      "expression": "smile_open.png",
+      "line": "グランドマスターでも、君は君のまま。それが一番すごいこと！"
+    },
+    {
+      "expression": "wink_point_up.png",
+      "line": "一緒にここまで来てくれて、ほんとうにありがとう💖"
+    }
+  ]
+}

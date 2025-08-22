@@ -74,7 +74,7 @@ async function testConnection() {
         statusIndicator.className = 'status-indicator status-warning';
         statusText.textContent = '接続中...';
         
-        const response = await fetch(`${baseUrl}/api/auth/health`, {
+        const response = await fetch(`${baseUrl}/api/health`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -89,7 +89,8 @@ async function testConnection() {
         }
     } catch (error) {
         statusIndicator.className = 'status-indicator status-error';
-        statusText.textContent = `接続失敗: ${error.message}`;
+        statusText.textContent = '接続失敗';
+        console.error('接続テストエラー:', error);
     }
 }
 
@@ -125,54 +126,147 @@ function generateCaptchaToken() {
     return 'captcha_' + Math.random().toString(36).substring(2, 15);
 }
 
-// レスポンス表示関数
-function displayResponse(elementId, response, error = null) {
-    const element = document.getElementById(elementId);
-    if (error) {
-        element.textContent = `エラー: ${error.message}\n\nResponse: ${JSON.stringify(response, null, 2)}`;
-        element.style.backgroundColor = '#2d1b1b';
-        element.style.color = '#ff9999';
-    } else {
-        element.textContent = JSON.stringify(response, null, 2);
-        element.style.backgroundColor = '#1e1e1e';
-        element.style.color = '#f8f8f2';
-        
-        // JWTが含まれている場合は保存
-        if (response.data && response.data.token) {
-            currentJWT = response.data.token;
-            document.getElementById('jwtToken').value = currentJWT;
-            localStorage.setItem('jwt_token', currentJWT);
+// クリップボードにコピーする関数
+async function copyToClipboard(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        // 一時的な成功メッセージを表示
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = '✅ コピー完了！';
+        button.style.background = '#4CAF50';
+        setTimeout(() => {
+            button.textContent = originalText;
+            button.style.background = '#667eea';
+        }, 2000);
+    } catch (err) {
+        // フォールバック: 古いブラウザ対応
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = '✅ コピー完了！';
+            button.style.background = '#4CAF50';
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.background = '#667eea';
+            }, 2000);
+        } catch (fallbackErr) {
+            console.error('コピーに失敗しました:', fallbackErr);
+            alert('コピーに失敗しました。手動でコピーしてください。');
         }
+        document.body.removeChild(textArea);
+    }
+}
+
+// レスポンス表示関数
+function displayResponse(elementId, data, error = null) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    if (error) {
+        element.textContent = `❌ エラー: ${error.message}`;
+        element.style.color = '#f44336';
+        element.style.backgroundColor = '#ffebee';
+    } else if (data) {
+        // 新しいAPIレスポンス形式に対応
+        let responseText = '';
+        
+        if (data.message) {
+            responseText += `📋 メッセージ: ${data.message}\n\n`;
+        }
+        
+        if (data.success !== undefined) {
+            responseText += `✅ 成功: ${data.success ? 'はい' : 'いいえ'}\n\n`;
+        }
+        
+        if (data.data) {
+            responseText += `📊 データ:\n`;
+            if (data.data.user) {
+                responseText += `   👤 ユーザー: ${JSON.stringify(data.data.user, null, 2)}\n`;
+            }
+            if (data.data.token) {
+                // トークンを完全表示（長い場合は改行で見やすく）
+                const token = data.data.token;
+                if (token.length > 80) {
+                    responseText += `   🎫 トークン:\n      ${token.substring(0, 80)}\n      ${token.substring(80)}\n`;
+                } else {
+                    responseText += `   🎫 トークン: ${token}\n`;
+                }
+                // トークンコピーボタンを追加
+                responseText += `   📋 <button onclick="copyToClipboard('${token}')" style="background: #667eea; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;">トークンをコピー</button>\n`;
+            }
+            if (data.data.magic_link_url) {
+                // Magic Link URLを完全表示（長い場合は改行で見やすく）
+                const url = data.data.magic_link_url;
+                if (url.length > 80) {
+                    responseText += `   🔗 Magic Link URL:\n      ${url.substring(0, 80)}\n      ${url.substring(80)}\n`;
+                } else {
+                    responseText += `   🔗 Magic Link URL: ${url}\n`;
+                }
+                // URLコピーボタンを追加
+                responseText += `   📋 <button onclick="copyToClipboard('${url}')" style="background: #667eea; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;">URLをコピー</button>\n`;
+            }
+            // その他のデータフィールド
+            Object.keys(data.data).forEach(key => {
+                if (!['user', 'token', 'magic_link_url'].includes(key)) {
+                    responseText += `   📝 ${key}: ${JSON.stringify(data.data[key])}\n`;
+                }
+            });
+        }
+        
+        if (data.errors) {
+            responseText += `❌ エラー詳細:\n${JSON.stringify(data.errors, null, 2)}\n`;
+        }
+        
+        if (data.details) {
+            responseText += `🔍 詳細情報:\n${JSON.stringify(data.details, null, 2)}\n`;
+        }
+        
+        element.innerHTML = responseText || JSON.stringify(data, null, 2);
+        element.style.color = '#2e7d32';
+        element.style.backgroundColor = '#e8f5e8';
+    } else {
+        element.textContent = 'レスポンスがありません';
+        element.style.color = '#666';
+        element.style.backgroundColor = '#f5f5f5';
     }
 }
 
 // Magic Link リクエスト
 async function requestMagicLink() {
-    const baseUrl = getBaseUrl();
     const email = document.getElementById('magicEmail').value;
     const selectedHand = document.getElementById('selectedHand').value;
     const recaptchaToken = document.getElementById('recaptchaToken').value;
     
-    if (!selectedHand) {
-        alert('CAPTCHAの手を選択してください');
+    if (!email) {
+        displayResponse('magicLinkResponse', null, new Error('メールアドレスを入力してください'));
         return;
     }
     
+    if (!selectedHand) {
+        displayResponse('magicLinkResponse', null, new Error('CAPTCHAを完了してください'));
+        return;
+    }
+    
+    try {
+        const baseUrl = getBaseUrl();
+        displayResponse('magicLinkResponse', { message: 'Magic Link送信中...' });
+    
     const requestData = {
         email: email,
-        captcha: {
-            opponent: captchaChallenge.opponent,
-            answer: selectedHand,
-            token: captchaChallenge.token
-        }
-    };
-    
-    // reCAPTCHAトークンがある場合は追加
+            captcha_token: captchaChallenge.token,
+            selected_hand: selectedHand
+        };
+        
     if (recaptchaToken) {
         requestData.recaptcha_token = recaptchaToken;
     }
     
-    try {
         const response = await fetch(`${baseUrl}/api/auth/request-magic-link`, {
             method: 'POST',
             headers: {
@@ -182,15 +276,21 @@ async function requestMagicLink() {
         });
         
         const data = await response.json();
+        
+        if (response.ok && data.success) {
         displayResponse('magicLinkResponse', data);
         
-        // Magic Link URLを生成・表示
-        if (data.success && data.data && data.data.token) {
-            showMagicLinkUrl(data.data.token);
-        }
-        
-        // CAPTCHA更新
+            // Magic Link URL表示
+            if (data.data && data.data.magic_link_url) {
+                document.getElementById('magicLinkUrl').textContent = data.data.magic_link_url;
+                document.getElementById('magicLinkUrlSection').style.display = 'block';
+            }
+            
+            // 次のCAPTCHA生成
         generateCaptcha();
+        } else {
+            displayResponse('magicLinkResponse', null, new Error(data.message || 'Magic Link送信に失敗しました'));
+        }
         
     } catch (error) {
         displayResponse('magicLinkResponse', null, error);
@@ -200,7 +300,7 @@ async function requestMagicLink() {
 // Magic Link URL表示
 function showMagicLinkUrl(token) {
     const baseUrl = getBaseUrl();
-    const magicLinkUrl = `${baseUrl}/monitoring/auth/magic-link-verify.html?token=${token}`;
+    const magicLinkUrl = `${baseUrl}/auth/magic-link-verify.html?token=${token}`;
     
     document.getElementById('magicLinkUrl').textContent = magicLinkUrl;
     document.getElementById('magicLinkUrlSection').style.display = 'block';
@@ -232,15 +332,19 @@ function copyMagicLink() {
 
 // Magic Link 検証
 async function verifyMagicLink() {
-    const baseUrl = getBaseUrl();
     const token = document.getElementById('magicToken').value;
     
     if (!token) {
-        alert('Magic Link トークンを入力してください');
+        displayResponse('verifyResponse', null, new Error('Magic Link Tokenを入力してください'));
         return;
     }
     
     try {
+        const baseUrl = getBaseUrl();
+        displayResponse('verifyResponse', { message: 'Magic Link検証中...' });
+        
+        console.log('🔍 Magic Link検証開始:', { token: token.substring(0, 20) + '...', baseUrl });
+        
         const response = await fetch(`${baseUrl}/api/auth/verify-magic-link`, {
             method: 'POST',
             headers: {
@@ -249,30 +353,92 @@ async function verifyMagicLink() {
             body: JSON.stringify({ token: token })
         });
         
-        const data = await response.json();
-        displayResponse('verifyResponse', data);
+        console.log('🔍 HTTPレスポンス:', { status: response.status, statusText: response.statusText });
+        
+        const responseText = await response.text();
+        console.log('🔍 レスポンステキスト:', responseText);
+        
+        let data;
+        try {
+            data = JSON.parse(responseText);
+            console.log('🔍 パースされたデータ:', data);
+        } catch (parseError) {
+            console.error('❌ JSONパースエラー:', parseError);
+            displayResponse('verifyResponse', null, new Error(`JSONパースエラー: ${parseError.message}\nレスポンス: ${responseText}`));
+            return;
+        }
+        
+        if (response.ok && data.success) {
+            displayResponse('verifyResponse', data);
+            
+            // JWTトークンを保存
+            if (data.data && data.data.token) {
+                currentJWT = data.data.token;
+                document.getElementById('jwtToken').value = data.data.token;
+                localStorage.setItem('jwt_token', data.data.token);
+                
+                // ユーザー情報も保存
+                if (data.data.user) {
+                    localStorage.setItem('magic_link_user', JSON.stringify(data.data.user));
+                }
+            }
+        } else {
+            displayResponse('verifyResponse', null, new Error(data.message || 'Magic Link検証に失敗しました'));
+        }
         
     } catch (error) {
+        console.error('❌ Magic Link検証エラー:', error);
         displayResponse('verifyResponse', null, error);
     }
 }
 
 // テストユーザーログイン
 async function testUserLogin() {
-    const baseUrl = getBaseUrl();
-    const userNumber = parseInt(document.getElementById('testUserNumber').value);
+    const userNumber = document.getElementById('testUserNumber').value;
+    
+    if (!userNumber) {
+        displayResponse('testUserResponse', null, new Error('テストユーザー番号を選択してください'));
+        return;
+    }
     
     try {
-        const response = await fetch(`${baseUrl}/api/auth/test-login`, {
+        const baseUrl = getBaseUrl();
+        displayResponse('testUserResponse', { message: 'テストユーザーログイン中...' });
+        
+        // テストユーザーのメールアドレスを生成
+        const email = `test${userNumber}@example.com`;
+        const password = 'password123';
+        
+        const response = await fetch(`${baseUrl}/api/auth/db-login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ user_number: userNumber })
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
         });
         
         const data = await response.json();
+        
+        if (response.ok && data.success) {
         displayResponse('testUserResponse', data);
+            
+            // JWTトークンを保存
+            if (data.data && data.data.token) {
+                currentJWT = data.data.token;
+                document.getElementById('jwtToken').value = data.data.token;
+                localStorage.setItem('jwt_token', data.data.token);
+                
+                // ユーザー情報も保存
+                if (data.data.user) {
+                    localStorage.setItem('test_user_data', JSON.stringify(data.data.user));
+                }
+            }
+        } else {
+            displayResponse('testUserResponse', null, new Error(data.message || 'テストユーザーログインに失敗しました'));
+        }
         
     } catch (error) {
         displayResponse('testUserResponse', null, error);
@@ -281,11 +447,18 @@ async function testUserLogin() {
 
 // 開発用ログイン
 async function devLogin() {
-    const baseUrl = getBaseUrl();
     const email = document.getElementById('devEmail').value;
     const mode = document.getElementById('devMode').value;
     
+    if (!email) {
+        displayResponse('devLoginResponse', null, new Error('メールアドレスを入力してください'));
+        return;
+    }
+    
     try {
+        const baseUrl = getBaseUrl();
+        displayResponse('devLoginResponse', { message: '開発用ログイン中...' });
+        
         const response = await fetch(`${baseUrl}/api/auth/dev-login`, {
             method: 'POST',
             headers: {
@@ -298,46 +471,97 @@ async function devLogin() {
         });
         
         const data = await response.json();
+        
+        if (response.ok && data.success) {
         displayResponse('devLoginResponse', data);
+            
+            // JWTトークンを保存
+            if (data.data && data.data.token) {
+                currentJWT = data.data.token;
+                document.getElementById('jwtToken').value = data.data.token;
+                localStorage.setItem('jwt_token', data.data.token);
+                
+                // ユーザー情報も保存
+                if (data.data.user) {
+                    localStorage.setItem('dev_user_data', JSON.stringify(data.data.user));
+                }
+            }
+        } else {
+            displayResponse('devLoginResponse', null, new Error(data.message || '開発用ログインに失敗しました'));
+        }
         
     } catch (error) {
         displayResponse('devLoginResponse', null, error);
     }
 }
 
-// 新形式ログイン
+// ユーザー情報認証テスト（新形式）
 async function userInfoLogin() {
-    const baseUrl = getBaseUrl();
     const userId = document.getElementById('userId').value;
     const password = document.getElementById('password').value;
     
+    if (!userId || !password) {
+        displayResponse('userInfoResponse', null, new Error('ユーザーIDとパスワードを入力してください'));
+        return;
+    }
+    
     try {
-        const response = await fetch(`${baseUrl}/api/auth/user-info`, {
+        const baseUrl = getBaseUrl();
+        displayResponse('userInfoResponse', { message: 'ユーザー情報認証中...' });
+        
+        // ユーザーIDからメールアドレスを生成（test_user_1 → test1@example.com）
+        const email = userId.replace('test_user_', 'test') + '@example.com';
+        
+        const response = await fetch(`${baseUrl}/api/auth/db-login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                userId: userId,
+                email: email,
                 password: password
             })
         });
         
         const data = await response.json();
+        
+        if (response.ok && data.success) {
         displayResponse('userInfoResponse', data);
+            
+            // JWTトークンを保存
+            if (data.data && data.data.token) {
+                currentJWT = data.data.token;
+                document.getElementById('jwtToken').value = data.data.token;
+                localStorage.setItem('jwt_token', data.data.token);
+                
+                // ユーザー情報も保存
+                if (data.data.user) {
+                    localStorage.setItem('user_info_data', JSON.stringify(data.data.user));
+                }
+            }
+        } else {
+            displayResponse('userInfoResponse', null, new Error(data.message || 'ユーザー情報認証に失敗しました'));
+        }
         
     } catch (error) {
         displayResponse('userInfoResponse', null, error);
     }
 }
 
-// 従来形式ログイン（非推奨）
+// ユーザー情報認証テスト（旧形式 - 非推奨）
 async function userInfoLoginLegacy() {
-    const baseUrl = getBaseUrl();
     const userId = document.getElementById('userId').value;
     const password = document.getElementById('password').value;
     
+    if (!userId || !password) {
+        displayResponse('userInfoResponse', null, new Error('ユーザーIDとパスワードを入力してください'));
+        return;
+    }
+    
     try {
+        const baseUrl = getBaseUrl();
+        displayResponse('userInfoResponse', { message: '旧形式APIでユーザー情報認証中...（非推奨）' });
+        
         const response = await fetch(`${baseUrl}/api/auth/UserInfo`, {
             method: 'POST',
             headers: {
@@ -350,7 +574,24 @@ async function userInfoLoginLegacy() {
         });
         
         const data = await response.json();
+        
+        if (response.ok && data.success) {
         displayResponse('userInfoResponse', data);
+            
+            // JWTトークンを保存
+            if (data.data && data.data.token) {
+                currentJWT = data.data.token;
+                document.getElementById('jwtToken').value = data.data.token;
+                localStorage.setItem('jwt_token', data.data.token);
+                
+                // ユーザー情報も保存
+                if (data.data.user) {
+                    localStorage.setItem('user_info_data_legacy', JSON.stringify(data.data.user));
+                }
+            }
+        } else {
+            displayResponse('userInfoResponse', null, new Error(data.message || '旧形式APIでのユーザー情報認証に失敗しました'));
+        }
         
     } catch (error) {
         displayResponse('userInfoResponse', null, error);
@@ -438,14 +679,11 @@ async function makeAuthenticatedRequest(endpoint, method = 'GET', body = null) {
 // シンプルAPIテスト
 async function simpleApiTest() {
     const baseUrl = getBaseUrl();
-    const statusIndicator = document.getElementById('connectionStatus');
-    const statusText = document.getElementById('connectionText');
     
     try {
-        statusIndicator.className = 'status-indicator status-warning';
-        statusText.textContent = 'APIテスト中...';
+        displayResponse('magicLinkResponse', { message: 'シンプルAPIテスト実行中...' });
         
-        const response = await fetch(`${baseUrl}/api/auth/health`, {
+        const response = await fetch(`${baseUrl}/api/health`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -454,55 +692,56 @@ async function simpleApiTest() {
         
         const data = await response.json();
         
-        if (response.ok && data.success) {
-            statusIndicator.className = 'status-indicator status-success';
-            statusText.textContent = 'APIテスト成功';
-            alert(`APIテスト成功: ${data.message}`);
+        if (response.ok) {
+            displayResponse('magicLinkResponse', {
+                success: true,
+                message: 'シンプルAPIテスト成功',
+                data: data
+            });
         } else {
-            throw new Error(`API Error: ${JSON.stringify(data)}`);
+            throw new Error(`HTTP ${response.status}: ${data.message || 'Unknown error'}`);
         }
     } catch (error) {
-        statusIndicator.className = 'status-indicator status-error';
-        statusText.textContent = `APIテスト失敗: ${error.message}`;
-        alert(`APIテスト失敗: ${error.message}`);
+        displayResponse('magicLinkResponse', null, error);
     }
 }
 
-// シンプル開発ログイン
+// シンプル開発ログイン（DB連携版対応）
 async function simpleDevLogin() {
-    const baseUrl = getBaseUrl();
-    
     try {
+        const baseUrl = getBaseUrl();
+        displayResponse('devLoginResponse', { message: 'シンプル開発ログイン中...' });
+        
         const response = await fetch(`${baseUrl}/api/auth/dev-login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                email: 'dev@example.com'
+                email: 'dev@example.com',
+                mode: 'dev'
             })
         });
         
         const data = await response.json();
-        displayResponse('devLoginResponse', data);
         
-        if (data.success && data.data && data.data.token) {
-            alert('シンプル開発ログイン成功！JWTが発行されました。');
+        if (response.ok && data.success) {
+            displayResponse('devLoginResponse', data);
+            
+            // JWTトークンを保存
+            if (data.data && data.data.token) {
+                currentJWT = data.data.token;
+                document.getElementById('jwtToken').value = currentJWT;
+            }
+        } else {
+            throw new Error(data.message || '開発用ログインに失敗しました');
         }
-        
     } catch (error) {
         displayResponse('devLoginResponse', null, error);
-        alert(`シンプル開発ログイン失敗: ${error.message}`);
     }
 }
 
-// デバッグ用のグローバル関数
-window.debugAuth = {
-    getCurrentJWT: () => currentJWT,
-    getCaptchaChallenge: () => captchaChallenge,
-    testAPI: async (endpoint, method, body) => {
-        return await makeAuthenticatedRequest(endpoint, method, body);
-    },
-    simpleTest: simpleApiTest,
-    simpleLogin: simpleDevLogin
-}; 
+// グローバル関数として公開
+window.testConnection = testConnection;
+window.simpleApiTest = simpleApiTest;
+window.simpleDevLogin = simpleDevLogin;

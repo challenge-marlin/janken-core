@@ -320,7 +320,8 @@
 
 | カラム名 | 物理名 | 型 | NULL許可 | デフォルト | 説明・用途 |
 |---------|--------|-----|----------|------------|------------|
-| ユーザーID | user_id | VARCHAR(50) | NO (PK) | | users.user_idとの紐付け |
+| ID | id | INT AUTO_INCREMENT | NO (PK) | | 主キー、内部管理用 |
+| ユーザーID | user_id | VARCHAR(50) | NO | | users.user_idとの紐付け |
 | 総試合数 | total_matches | INT | NO | 0 | 参加した総試合数 |
 | 総勝利数 | total_wins | INT | NO | 0 | 勝利した試合数 |
 | 総敗北数 | total_losses | INT | NO | 0 | 敗北した試合数 |
@@ -333,22 +334,27 @@
 | パー使用回数 | paper_count | INT | NO | 0 | パーを出した回数 |
 | チョキ使用回数 | scissors_count | INT | NO | 0 | チョキを出した回数 |
 | お気に入りの手 | favorite_hand | VARCHAR(10) | YES | | 最も多く使用する手 |
-| 直近手順結果 | recent_hand_results_str | VARCHAR(255) | NO | '' | 直近の手と結果の文字列 |
 | 平均バトル時間 | average_battle_duration_seconds | INT | NO | 0 | 平均バトル所要時間（秒） |
 | 最終対戦日時 | last_battle_at | TIMESTAMP | YES | | 最後に対戦した日時 |
-| 称号 | title | VARCHAR(50) | NO | '' | 現在の表示称号 |
+| 称号 | title | VARCHAR(100) | NO | '' | 現在の表示称号 |
 | 獲得称号一覧 | available_titles | VARCHAR(255) | NO | '' | 獲得済み称号のCSV |
-| 二つ名 | alias | VARCHAR(50) | NO | '' | 現在の二つ名 |
+| 二つ名 | alias | VARCHAR(100) | NO | '' | 現在の二つ名 |
 | 称号表示設定 | show_title | BOOLEAN | NO | TRUE | 称号の公開設定 |
 | 二つ名表示設定 | show_alias | BOOLEAN | NO | TRUE | 二つ名の公開設定 |
 | ユーザーランク | user_rank | VARCHAR(20) | NO | 'no_rank' | ランク（no_rank/bronze/silver/gold/platinum/diamond） |
+| 日次勝利数 | daily_wins | INT | NO | 0 | その日の勝利数 |
+| 日次ランキング | daily_ranking | INT | YES | | その日のランキング順位 |
+| 直近手順結果 | recent_hand_results_str | VARCHAR(255) | NO | '' | 直近の手と結果の文字列 |
 | 最終リセット日 | last_reset_at | DATE | NO | CURDATE() | 日次統計リセット日 |
-| 更新日時 | updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 統計更新日時 |
+| 作成日時 | created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | レコード作成日時 |
+| 更新日時 | updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 最終更新日時 |
 
 #### インデックス
-- **INDEX**: win_rate DESC, total_matches DESC（ランキング用）
-- **INDEX**: user_rank, last_battle_at（ユーザーランク・最終対戦日時用）
-- **INDEX**: total_rounds_played, current_streak（統計分析用）
+- **PRIMARY KEY**: id
+- **INDEX**: user_id, total_matches, win_rate, user_rank, daily_ranking, last_battle_at, favorite_hand
+
+#### 外部キー
+- **user_id** → users(user_id) ON DELETE CASCADE（一時的に無効化）
 
 ---
 

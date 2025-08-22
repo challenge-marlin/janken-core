@@ -1,0 +1,254 @@
+{
+  "messages": [
+    {
+      "id": 1,
+      "expression": "victory_wink_cheerful.png",
+      "line": "やっぱり君は最高だね♪"
+    },
+    {
+      "id": 2,
+      "expression": "victory_wink_cheerful.png",
+      "line": "その一手、完璧だったよ！"
+    },
+    {
+      "id": 3,
+      "expression": "victory_wink_cheerful.png",
+      "line": "ふふっ、楽勝だったかな？"
+    },
+    {
+      "id": 4,
+      "expression": "victory_wink_cheerful.png",
+      "line": "見事な勝利、お見事です！"
+    },
+    {
+      "id": 5,
+      "expression": "victory_wink_cheerful.png",
+      "line": "その笑顔が見たかったんだ～！"
+    },
+    {
+      "id": 6,
+      "expression": "victory_wink_cheerful.png",
+      "line": "次もその調子でいこうねっ！"
+    },
+    {
+      "id": 7,
+      "expression": "victory_wink_cheerful.png",
+      "line": "さすがだね、まぶしいよ✨"
+    },
+    {
+      "id": 8,
+      "expression": "victory_wink_cheerful.png",
+      "line": "余裕の勝利だね！かっこいい！"
+    },
+    {
+      "id": 9,
+      "expression": "victory_wink_cheerful.png",
+      "line": "勝ったあとのウィンク、決まってる♪"
+    },
+    {
+      "id": 10,
+      "expression": "victory_wink_cheerful.png",
+      "line": "これが君の本気？まだまだいけそうだね！"
+    },
+    {
+      "id": 11,
+      "expression": "victory_fist_pump.png",
+      "line": "勝ったあああー！君、最高！！"
+    },
+    {
+      "id": 12,
+      "expression": "victory_fist_pump.png",
+      "line": "よっしゃー！ナイスファイト！"
+    },
+    {
+      "id": 13,
+      "expression": "victory_fist_pump.png",
+      "line": "勝利を掴んだね！そのガッツ、見てたよ！"
+    },
+    {
+      "id": 14,
+      "expression": "victory_fist_pump.png",
+      "line": "よしっ！完璧な戦いだった！"
+    },
+    {
+      "id": 15,
+      "expression": "victory_fist_pump.png",
+      "line": "一緒に叫ぼう！勝ったぞーー！！"
+    },
+    {
+      "id": 16,
+      "expression": "victory_fist_pump.png",
+      "line": "その拳に、勝利の女神もびっくり！"
+    },
+    {
+      "id": 17,
+      "expression": "victory_fist_pump.png",
+      "line": "ガッツポーズ、決まってるね！"
+    },
+    {
+      "id": 18,
+      "expression": "victory_fist_pump.png",
+      "line": "今の一手、完璧だったよ！"
+    },
+    {
+      "id": 19,
+      "expression": "victory_fist_pump.png",
+      "line": "勢いそのまま、次も勝ち取ろう！"
+    },
+    {
+      "id": 20,
+      "expression": "victory_fist_pump.png",
+      "line": "やったね！私まで燃えてきた！"
+    },
+    {
+      "id": 21,
+      "expression": "victory_laugh_open_mouth.png",
+      "line": "あははっ！すごい、ほんとに勝っちゃったね！"
+    },
+    {
+      "id": 22,
+      "expression": "victory_laugh_open_mouth.png",
+      "line": "楽しかったぁ！最高の勝負だったよ！"
+    },
+    {
+      "id": 23,
+      "expression": "victory_laugh_open_mouth.png",
+      "line": "キミ、強すぎっ！面白すぎる！"
+    },
+    {
+      "id": 24,
+      "expression": "victory_laugh_open_mouth.png",
+      "line": "ハッハー！完勝！完璧！！"
+    },
+    {
+      "id": 25,
+      "expression": "victory_laugh_open_mouth.png",
+      "line": "その手には、もう敵なしだね♪"
+    },
+    {
+      "id": 26,
+      "expression": "victory_laugh_open_mouth.png",
+      "line": "全力で勝ち取ったこの勝利、最高すぎ！"
+    },
+    {
+      "id": 27,
+      "expression": "victory_laugh_open_mouth.png",
+      "line": "まだまだいけるでしょ？次も勝っちゃおう！"
+    },
+    {
+      "id": 28,
+      "expression": "victory_laugh_open_mouth.png",
+      "line": "私、笑いが止まらないんだけど！"
+    },
+    {
+      "id": 29,
+      "expression": "victory_laugh_open_mouth.png",
+      "line": "この勢い、止まらないねっ！"
+    },
+    {
+      "id": 30,
+      "expression": "victory_laugh_open_mouth.png",
+      "line": "あー楽しい！キミといると元気になる！"
+    },
+    {
+      "id": 31,
+      "expression": "victory_smile_proud.png",
+      "line": "君の努力、ちゃんと勝利に結びついたね。"
+    },
+    {
+      "id": 32,
+      "expression": "victory_smile_proud.png",
+      "line": "自信持っていいよ、ほんとすごい！"
+    },
+    {
+      "id": 33,
+      "expression": "victory_smile_proud.png",
+      "line": "私の誇りのパートナーだよ♪"
+    },
+    {
+      "id": 34,
+      "expression": "victory_smile_proud.png",
+      "line": "その勝利、堂々と胸を張っていいんだからね！"
+    },
+    {
+      "id": 35,
+      "expression": "victory_smile_proud.png",
+      "line": "しっかりキメたね。素晴らしい勝負だったよ。"
+    },
+    {
+      "id": 36,
+      "expression": "victory_smile_proud.png",
+      "line": "今日の君、ほんとにかっこいいよ！"
+    },
+    {
+      "id": 37,
+      "expression": "victory_smile_proud.png",
+      "line": "どこに出しても誇れる勝利だね！"
+    },
+    {
+      "id": 38,
+      "expression": "victory_smile_proud.png",
+      "line": "じっくり味わおう、この勝利の余韻✨"
+    },
+    {
+      "id": 39,
+      "expression": "victory_smile_proud.png",
+      "line": "その一手に、魂を感じたよ！"
+    },
+    {
+      "id": 40,
+      "expression": "victory_smile_proud.png",
+      "line": "誇らしい…君と一緒に戦えてよかった！"
+    },
+    {
+      "id": 41,
+      "expression": "victory_tearful_happy.png",
+      "line": "うう…感動した…ほんとすごかった…！"
+    },
+    {
+      "id": 42,
+      "expression": "victory_tearful_happy.png",
+      "line": "涙が止まらないよ…君、頑張ったね！"
+    },
+    {
+      "id": 43,
+      "expression": "victory_tearful_happy.png",
+      "line": "私、こんなにうれしいの初めてかも…"
+    },
+    {
+      "id": 44,
+      "expression": "victory_tearful_happy.png",
+      "line": "努力は裏切らないって、証明してくれたね！"
+    },
+    {
+      "id": 45,
+      "expression": "victory_tearful_happy.png",
+      "line": "胸がいっぱい…すごいよ、ほんとに…！"
+    },
+    {
+      "id": 46,
+      "expression": "victory_tearful_happy.png",
+      "line": "頑張ったね…君のその手で勝ち取ったんだね！"
+    },
+    {
+      "id": 47,
+      "expression": "victory_tearful_happy.png",
+      "line": "感動しちゃった…でも、もっとがんばろうね！"
+    },
+    {
+      "id": 48,
+      "expression": "victory_tearful_happy.png",
+      "line": "こんなに嬉しい勝利、久しぶりだよ！"
+    },
+    {
+      "id": 49,
+      "expression": "victory_tearful_happy.png",
+      "line": "涙出ちゃう…でも笑顔でお祝いしよ！"
+    },
+    {
+      "id": 50,
+      "expression": "victory_tearful_happy.png",
+      "line": "今日の君は、本当に輝いてたよ✨"
+    }
+  ]
+}

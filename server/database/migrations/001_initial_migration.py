@@ -1,22 +1,22 @@
 """
 初期マイグレーション - 基本認証システム
-Laravel風: 2025_01_13_000001_create_users_table 相当
+DB仕様書に基づく完全版
 """
+
 from sqlalchemy import text
+from sqlalchemy.engine import Connection
 from typing import Dict, Any
 
 class InitialMigration:
     """基本認証システムのテーブル作成"""
     
     @staticmethod
-    def up(connection) -> None:
-        """マイグレーション実行 (php artisan migrate 相当)"""
+    def up(connection: Connection) -> None:
+        """マイグレーション実行"""
         
-        # 1. データベース作成
-        connection.execute(text("CREATE DATABASE IF NOT EXISTS janken_db"))
-        connection.execute(text("USE janken_db"))
+        print("✅ 初期マイグレーション開始: 基本認証システム")
         
-        # 2. ユーザー基本情報
+        # 1. ユーザー基本情報
         connection.execute(text("""
             CREATE TABLE IF NOT EXISTS users (
                 management_code BIGINT AUTO_INCREMENT UNIQUE,
@@ -36,10 +36,11 @@ class InitialMigration:
                 INDEX idx_role (role),
                 INDEX idx_created_at (created_at),
                 INDEX idx_management_code (management_code)
-            )
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """))
+        print("✅ usersテーブル作成完了")
         
-        # 3. ユーザー詳細情報
+        # 2. ユーザー詳細プロフィール
         connection.execute(text("""
             CREATE TABLE IF NOT EXISTS user_profiles (
                 user_id VARCHAR(50) PRIMARY KEY,
@@ -56,10 +57,11 @@ class InitialMigration:
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
                 INDEX idx_university (university),
                 INDEX idx_birthdate (birthdate)
-            )
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """))
+        print("✅ user_profilesテーブル作成完了")
         
-        # 4. 認証資格情報
+        # 3. 認証資格情報
         connection.execute(text("""
             CREATE TABLE IF NOT EXISTS auth_credentials (
                 user_id VARCHAR(50) NOT NULL,
@@ -72,10 +74,11 @@ class InitialMigration:
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (user_id),
                 CONSTRAINT fk_authcred_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-            )
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """))
+        print("✅ auth_credentialsテーブル作成完了")
         
-        # 5. 端末管理
+        # 4. 端末管理
         connection.execute(text("""
             CREATE TABLE IF NOT EXISTS user_devices (
                 device_id VARCHAR(128) PRIMARY KEY,
@@ -93,14 +96,15 @@ class InitialMigration:
                 INDEX idx_user_id (user_id),
                 INDEX idx_device_type (itemtype),
                 INDEX idx_last_used (last_used_at)
-            )
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """))
+        print("✅ user_devicesテーブル作成完了")
         
         print("✅ 初期マイグレーション完了: ユーザー・認証基盤")
     
     @staticmethod
-    def down(connection) -> None:
-        """マイグレーション取り消し (php artisan migrate:rollback 相当)"""
+    def down(connection: Connection) -> None:
+        """マイグレーション取り消し"""
         
         tables = [
             'user_devices',

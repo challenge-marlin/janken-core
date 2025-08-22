@@ -304,34 +304,57 @@ class DBBattleGame {
     // ==================== WebSocket接続 ====================
     
     connectWebSocket() {
-        if (this.isConnected) return;
+        if (!this.currentUser) {
+            this.log('❌ 先にログインしてください', 'error');
+            return;
+        }
+        
+        if (this.isConnected) {
+            this.log('⚠️ 既にWebSocketが接続されています', 'warning');
+            return;
+        }
         
         try {
-            this.websocket = new WebSocket('ws://localhost:3000/ws/battle');
+            // 動的なWebSocket URL生成（battle.jsと同様の形式）
+            const wsUrl = `ws://${window.location.hostname}:3000/api/battle/ws/${this.currentUser.user_id}`;
+            this.log(`🔌 WebSocket接続試行: ${wsUrl}`);
             
-            this.websocket.onopen = () => {
-                this.isConnected = true;
-                this.updateConnectionStatus('connected');
-                this.log('🔌 WebSocket接続完了');
-            };
-            
-            this.websocket.onmessage = (event) => {
-                this.handleWebSocketMessage(JSON.parse(event.data));
-            };
-            
-            this.websocket.onclose = () => {
-                this.isConnected = false;
-                this.updateConnectionStatus('disconnected');
-                this.log('🔌 WebSocket接続切断');
-            };
-            
-            this.websocket.onerror = (error) => {
-                this.log(`❌ WebSocketエラー: ${error}`, 'error');
-            };
+            this.websocket = new WebSocket(wsUrl);
+            this.setupWebSocketHandlers();
+            this.updateConnectionStatus('connecting');
             
         } catch (error) {
             this.log(`❌ WebSocket接続エラー: ${error.message}`, 'error');
+            this.updateConnectionStatus('disconnected');
         }
+    }
+    
+    setupWebSocketHandlers() {
+        this.websocket.onopen = () => {
+            this.isConnected = true;
+            this.updateConnectionStatus('connected');
+            this.log('🔌 WebSocket接続完了');
+        };
+        
+        this.websocket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                this.handleWebSocketMessage(data);
+            } catch (error) {
+                this.log(`❌ メッセージパースエラー: ${error.message}`, 'error');
+            }
+        };
+        
+        this.websocket.onclose = () => {
+            this.isConnected = false;
+            this.updateConnectionStatus('disconnected');
+            this.log('🔌 WebSocket接続切断');
+        };
+        
+        this.websocket.onerror = (error) => {
+            this.log(`❌ WebSocketエラー: ${error.message || 'Unknown error'}`, 'error');
+            this.updateConnectionStatus('disconnected');
+        };
     }
     
     disconnectWebSocket() {
@@ -358,6 +381,11 @@ class DBBattleGame {
                 statusText.textContent = '接続済み';
                 connectBtn.style.display = 'none';
                 disconnectBtn.style.display = 'inline-block';
+                break;
+            case 'connecting':
+                statusText.textContent = '接続中...';
+                connectBtn.style.display = 'none';
+                disconnectBtn.style.display = 'none';
                 break;
             case 'disconnected':
                 statusText.textContent = '未接続';

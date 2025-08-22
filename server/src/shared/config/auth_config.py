@@ -76,7 +76,7 @@ class AuthConfig:
     # ID/パスワード認証用サンプルユーザー設定
     SAMPLE_LOGIN_USERS: List[Dict[str, Any]] = [
         {
-            "user_id": "sample_user_1",
+            "user_id": "",
             "password": "password123",
             "nickname": "サンプルユーザー1",
             "profile_image_url": "https://lesson01.myou-kou.com/avatars/defaultAvatar1.png",

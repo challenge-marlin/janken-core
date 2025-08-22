@@ -226,10 +226,14 @@ from src.screens.auth.services import AuthService
 #### **📋 型ヒント（必須）**
 ```python
 from typing import Optional, List, Dict, Any
+from sqlalchemy.orm import AsyncSession
+from sqlalchemy import select
 
-async def get_user_by_id(user_id: str, db: Session) -> Optional[User]:
-    """ユーザーID検索 - 型ヒントで安全性確保"""
-    return db.query(User).filter(User.user_id == user_id).first()
+async def get_user_by_id(user_id: str, db: AsyncSession) -> Optional[User]:
+    """ユーザーID検索 - 型ヒントで安全性確保（非同期版）"""
+    stmt = select(User).where(User.user_id == user_id)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
 
 async def get_users_list(limit: int = 10) -> List[Dict[str, Any]]:
     """ユーザー一覧取得 - 戻り値の型も明示"""
@@ -259,33 +263,38 @@ class User(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 ```
 
-#### **🏪 リポジトリパターン実装**
+#### **🏪 リポジトリパターン実装（SQLAlchemy 2.0非同期構文）**
 ```python
 # src/screens/auth/repositories.py
 from typing import Optional, List
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import AsyncSession
+from sqlalchemy import select
 from .models import User
 
 class UserRepository:
-    """ユーザーリポジトリ - LaravelのEloquentの代替"""
+    """ユーザーリポジトリ - LaravelのEloquentの代替（非同期版）"""
     
-    def __init__(self, db: Session = Depends(get_db_session)):
+    def __init__(self, db: AsyncSession = Depends(get_db_session)):
         self.db = db
     
     async def find_by_id(self, user_id: str) -> Optional[User]:
         """ID検索 - LaravelのUser::find()相当"""
-        return self.db.query(User).filter(User.user_id == user_id).first()
+        stmt = select(User).where(User.user_id == user_id)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
     
     async def find_by_email(self, email: str) -> Optional[User]:
         """メール検索 - LaravelのUser::where('email', $email)->first()相当"""
-        return self.db.query(User).filter(User.email == email).first()
+        stmt = select(User).where(User.email == email)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
     
     async def create(self, user_data: dict) -> User:
         """ユーザー作成 - LaravelのUser::create()相当"""
         user = User(**user_data)
         self.db.add(user)
-        self.db.commit()
-        self.db.refresh(user)
+        await self.db.commit()
+        await self.db.refresh(user)
         return user
     
     async def update(self, user_id: str, update_data: dict) -> Optional[User]:
@@ -294,13 +303,19 @@ class UserRepository:
         if user:
             for key, value in update_data.items():
                 setattr(user, key, value)
-            self.db.commit()
-            self.db.refresh(user)
+            await self.db.commit()
+            await self.db.refresh(user)
         return user
 ```
 
 #### **💡 AIへの指示のコツ**
 > 「データベース操作にはSQLAlchemy ORMを使用します。LaravelのEloquentのように直接モデルにCRUDメソッドを持たせず、`UserRepository`のようなリポジトリ層またはサービス層でカプセル化し、FastAPIのDependsでセッションを注入してください。」
+
+**⚠️ 重要な注意事項:**
+- **SQLAlchemy 2.0非同期構文の使用が必須**です
+- **同期的なクエリ構文（`db.query()`）は禁止**です
+- **必ず`select()`、`await db.execute()`、`result.scalar_one_or_none()`を使用**してください
+- **AsyncSessionを使用し、`await`を適切に使用**してください
 
 ### 🚨 **エラーハンドリングとレスポンス**
 
@@ -768,14 +783,15 @@ handler = Mangum(app)
 │   ├── main.py                   # FastAPIアプリケーション
 │   └── lambda_handler.py         # Lambda エントリーポイント
 │
-├── database/                    # 🆕 Laravel風データベース管理
+├── database/                    # Laravel風データベース管理
 │   ├── migrations/              # マイグレーションファイル
 │   │   ├── 001_initial_migration.py         # 基本認証システム
 │   │   ├── 002_auth_system_migration.py     # Magic Link + JWT
 │   │   ├── 003_game_system_migration.py     # ゲーム・統計
-│   │   └── 004_system_tables_migration.py   # システム管理
-│   ├── seeders/                 # シーダーファイル
-│   │   └── UserSeeder.py        # テストユーザー・設定
+│   │   ├── 004_system_tables_migration.py   # システム管理
+│   │   └── 006_unified_user_stats_migration.py # 統合ユーザーステータス
+├── seeders/                     # シーダーファイル
+│   └── UserSeeder.py              # 5名のテストユーザー + システム設定
 ├── scripts/                     # 🆕 Laravel風管理スクリプト
 │   ├── migrate.py               # php artisan migrate 相当
 │   └── setup_database.py        # Docker環境セットアップ
@@ -863,130 +879,101 @@ sam deploy --guided
 
 ## データベース管理（Laravel風マイグレーションシステム）
 
-### 🏆 **統一されたマイグレーションシステム**
+### 統一されたマイグレーションシステム
 
-本プロジェクトでは、**Laravel風マイグレーションシステム**を標準として採用しています。
+本プロジェクトでは、Laravel風マイグレーションシステムを標準として採用しています。
 
-#### ✨ **主な特徴**
-- **📁 機能別分割**: マイグレーションファイルを機能別に分離
-- **📊 履歴管理**: `migrations`テーブルで実行履歴を自動管理
-- **⏪ ロールバック**: 安全なデータベース状態の巻き戻し
-- **🔗 依存関係管理**: マイグレーション間の依存関係を明確化
-- **🌱 シーダー対応**: テストデータの自動投入
-- **🔄 ボリュームマウント**: ファイル修正の自動反映
+#### 主な特徴
+- 機能別分割: マイグレーションファイルを機能別に分離
+- 履歴管理: `migrations`テーブルで実行履歴を自動管理
+- ロールバック: 安全なデータベース状態の巻き戻し
+- 依存関係管理: マイグレーション間の依存関係を明確化
+- シーダー対応: テストデータの自動投入
+- ボリュームマウント: ファイル修正の自動反映
 
-### 🚀 **新規プロジェクト構築手順**
+### 新規プロジェクト構築手順
 
-#### **ステップ1: Docker環境起動**
+#### ステップ1: Docker環境起動
 ```bash
-# サーバーディレクトリに移動
 cd server
-
-# Docker環境起動（ボリュームマウントあり）
 docker-compose up -d
 ```
 
-#### **ステップ2: マイグレーションファイル配置**
+#### ステップ2: マイグレーションファイル配置
 ```bash
-# APIコンテナ内にディレクトリ作成
 docker-compose exec api mkdir -p /app/scripts /app/database/migrations /app/database/seeders
 
-# マイグレーション管理スクリプトをコピー
 docker cp scripts/migrate.py kaminote-janken-api:/app/scripts/
 
-# マイグレーションファイルを順次コピー
 docker cp database/migrations/001_initial_migration.py kaminote-janken-api:/app/database/migrations/
 docker cp database/migrations/002_auth_system_migration.py kaminote-janken-api:/app/database/migrations/
-docker cp database/migrations/003_game_system_migration.py kaminote-janken-api:/app/database/migrations/
-docker cp database/migrations/004_system_tables_migration.py kaminote-janken-api:/app/database/migrations/
+docker cp database/migrations/003_security_system_migration.py kaminote-janken-api:/app/database/migrations/
+docker cp database/migrations/004_game_system_migration.py kaminote-janken-api:/app/database/migrations/
+docker cp database/migrations/005_system_management_migration.py kaminote-janken-api:/app/database/migrations/
+docker cp database/migrations/006_user_stats_migration.py kaminote-janken-api:/app/database/migrations/
 
-# シーダーファイルをコピー
 docker cp database/seeders/UserSeeder.py kaminote-janken-api:/app/database/seeders/
 docker cp scripts/seed.py kaminote-janken-api:/app/scripts/
 ```
 
-#### **ステップ3: マイグレーション実行**
+#### ステップ3: マイグレーション実行
 ```bash
-# Laravel風マイグレーション実行（全テーブル作成）
 docker-compose exec api python /app/scripts/migrate.py migrate
-
-# マイグレーション状況確認
+docker-compose exec api python /app/database/migrations/006_user_stats_migration.py
 docker-compose exec api python /app/scripts/migrate.py status
-
-# テストデータ投入
 docker-compose exec api python /app/scripts/seed.py --class UserSeeder
 ```
 
-#### **ステップ4: 動作確認**
+#### ステップ4: 動作確認
 ```bash
-# テーブル一覧確認
 docker-compose exec mysql mysql -u root -ppassword janken_db -e "SHOW TABLES;"
-
-# テストユーザー確認
-docker-compose exec mysql mysql -u root -ppassword janken_db -e "SELECT user_id, email, nickname FROM users LIMIT 5;"
-
-# マイグレーション履歴確認
-docker-compose exec mysql mysql -u root -ppassword janken_db -e "SELECT migration, batch, executed_at FROM migrations;"
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "DESCRIBE user_stats;"
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "SELECT user_id, email, nickname, profile_image_url FROM users LIMIT 5;"
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "SELECT user_id, total_wins, total_losses, total_draws, daily_wins, title, alias FROM user_stats LIMIT 5;"
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "SELECT migration, batch, executed_at FROM migrations ORDER BY batch, executed_at;"
 ```
 
-### 📋 **日常的なマイグレーション操作**
+### 日常的なマイグレーション操作
 
-#### **基本コマンド**
+#### 基本コマンド
 ```bash
-# 新規マイグレーション実行
 docker-compose exec api python /app/scripts/migrate.py migrate
-
-# マイグレーション状況確認
 docker-compose exec api python /app/scripts/migrate.py status
-
-# ロールバック（最後の1つを取り消し）
 docker-compose exec api python /app/scripts/migrate.py rollback --steps 1
-
-# 特定のマイグレーションまで実行
 docker-compose exec api python /app/scripts/migrate.py migrate --target 003_game_system_migration
 ```
 
-#### **データベース状態監視**
+#### データベース状態監視
 ```bash
-# 全テーブル一覧
 docker-compose exec mysql mysql -u root -ppassword janken_db -e "SHOW TABLES;"
-
-# マイグレーション履歴詳細
-docker-compose exec mysql mysql -u root -ppassword janken_db -e "
-SELECT 
-    migration, 
-    batch, 
-    executed_at,
-    DATE_FORMAT(executed_at, '%Y-%m-%d %H:%i:%s') as formatted_time
-FROM migrations 
-ORDER BY batch, executed_at;"
-
-# テーブル構造確認
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "SELECT migration, batch, executed_at FROM migrations ORDER BY batch, executed_at;"
 docker-compose exec mysql mysql -u root -ppassword janken_db -e "DESCRIBE users;"
 docker-compose exec mysql mysql -u root -ppassword janken_db -e "DESCRIBE user_stats;"
 ```
 
-### 🗂️ **マイグレーションファイル構成**
+### マイグレーションファイル構成
 
 ```
 database/
-├── migrations/                    # Laravel風マイグレーション（標準）
-│   ├── 001_initial_migration.py   # 基本認証システム（users, user_profiles, auth_credentials）
-│   ├── 002_auth_system_migration.py # Magic Link + JWT（sessions, magic_link_tokens, jwt_blacklist）
-│   ├── 003_game_system_migration.py # ゲーム・統計（battle_results, user_stats, daily_rankings）
-│   └── 004_system_tables_migration.py # システム管理（system_settings, login_attempts）
-├── seeders/                       # テストデータ
-│   └── UserSeeder.py              # 5名のテストユーザー + システム設定
-└── scripts/                       # 管理スクリプト
-    ├── migrate.py                 # マイグレーション管理（php artisan migrate 相当）
-    └── seed.py                    # シーダー実行（php artisan db:seed 相当）
+├── migrations/
+│   ├── 001_initial_migration.py         # 基本認証システム
+│   ├── 002_auth_system_migration.py     # Magic Link + JWT
+│   ├── 003_security_system_migration.py # セキュリティ・監査
+│   ├── 004_game_system_migration.py     # ゲーム・統計・ランキング
+│   ├── 005_system_management_migration.py # システム管理・監視
+│   └── 006_user_stats_migration.py      # ユーザーステータス専用
+├── seeders/
+│   └── UserSeeder.py                    # テストユーザー・システム設定
+└── scripts/
+    ├── migrate.py                        # マイグレーション管理
+    └── seed.py                           # シーダー実行
 ```
 
-#### **各マイグレーションの詳細**
+#### 各マイグレーションの詳細
 
 **001_initial_migration.py - 基本認証システム**
-- `users` - ユーザー基本情報（user_id, email, nickname, role）
-- `user_profiles` - ユーザー詳細情報（住所、電話番号等）
+- `users` - ユーザー基本情報
+- `user_profiles` - ユーザー詳細情報
 - `auth_credentials` - パスワード認証情報
 - `user_devices` - デバイス管理
 
@@ -997,47 +984,73 @@ database/
 - `jwt_blacklist` - JWTブラックリスト
 - `two_factor_auth` - 2要素認証
 
-**003_game_system_migration.py - ゲーム・統計システム**
-- `battle_results` - バトル結果記録
-- `battle_rounds` - バトルラウンド詳細
-- `user_stats` - ユーザー統計（勝敗、連勝記録等）
-- `daily_rankings` - 日次ランキング
-
-**004_system_tables_migration.py - システム管理**
-- `system_settings` - システム設定
-- `oauth_accounts` - OAuth連携
-- `login_attempts` - ログイン試行管理
+**003_security_system_migration.py - セキュリティ・監査システム**
+- `login_attempts` - ログイン試行記録
 - `security_events` - セキュリティイベントログ
 - `admin_logs` - 管理者操作ログ
+- `system_settings` - システム設定
+- `oauth_accounts` - OAuth連携
+
+**004_game_system_migration.py - ゲーム・統計・ランキングシステム**
+- `battle_results` - バトル結果記録
+- `battle_rounds` - バトルラウンド詳細
+- `daily_rankings` - 日次ランキング
+- `weekly_rankings` - 週次ランキング
+
+**006_user_stats_migration.py - ユーザーステータス専用**
+- `user_stats` - ユーザー統計（勝敗、連勝記録、手の統計等）
+
+**005_system_management_migration.py - システム管理・監視**
 - `activity_logs` - アクティビティログ
+- `system_stats` - システム統計
+- `system_health` - システムヘルスチェック
+- `performance_metrics` - パフォーマンスメトリクス
+- `system_events` - システムイベント
+
+#### マイグレーションの依存関係
+
+**各マイグレーションの実行順序：**
+1. **001_initial_migration.py**: 基本認証システム（依存なし）
+2. **002_auth_system_migration.py**: Magic Link + JWT認証（001に依存）
+3. **003_security_system_migration.py**: セキュリティ・監査（001に依存）
+4. **004_game_system_migration.py**: ゲーム・統計・ランキング（001に依存）
+5. **005_system_management_migration.py**: システム管理・監視（001に依存）
+6. **006_user_stats_migration.py**: ユーザーステータス専用（001に依存）
+
+**各マイグレーションの特徴：**
+- **001**: ユーザー基本情報、プロフィール、認証、端末管理の基盤
+- **002**: セッション管理、JWT、2FA等の認証拡張機能
+- **003**: セキュリティ監査、ログイン試行記録、OAuth連携
+- **004**: じゃんけんゲーム、バトル結果、ランキングシステム
+- **005**: システム監視、パフォーマンス、アクティビティログ
+- **006**: ユーザーステータス（戦績、統計、称号等）の専用管理
+
+**注意**: 各マイグレーションは独立して動作し、必要に応じて個別に実行可能です。
 
 ### 🌱 **シーダーシステム**
 
 #### **基本的な使用方法**
 ```bash
-# ユーザーシーダー実行（テストユーザー + システム設定投入）
 docker-compose exec api python /app/scripts/seed.py --class UserSeeder
-
-# 全シーダー実行
 docker-compose exec api python /app/scripts/seed.py --all
 ```
 
-#### **投入されるテストデータ**
-- **5名のテストユーザー**: `test_user_1` ～ `test_user_5`
+#### 投入されるテストデータ
+- 5名のテストユーザー: `test_user_1` ～ `test_user_5`
   - Email: `test1@example.com` ～ `test5@example.com`
   - Password: `password123`
   - ニックネーム: じゃんけんマスター、バトルクイーン、勝負師、新米戦士、伝説のプレイヤー
-- **システム設定**: セキュリティ・認証・ゲーム設定値
-- **統計データ初期化**: 各ユーザーの初期統計レコード
+- システム設定: セキュリティ・認証・ゲーム設定値
+- 統計データ初期化: 各ユーザーの初期統計レコード
 
-### 🆕 **新しいマイグレーション追加時の手順**
+### 新しいマイグレーション追加時の手順
 
 ```bash
 # 1. 新規マイグレーションファイルを作成
-# database/migrations/005_new_feature_migration.py
+# database/migrations/007_new_feature_migration.py
 
 # 2. コンテナにコピー
-docker cp database/migrations/005_new_feature_migration.py kaminote-janken-api:/app/database/migrations/
+docker cp database/migrations/007_new_feature_migration.py kaminote-janken-api:/app/database/migrations/
 
 # 3. マイグレーション実行
 docker-compose exec api python /app/scripts/migrate.py migrate
@@ -1046,55 +1059,61 @@ docker-compose exec api python /app/scripts/migrate.py migrate
 docker-compose exec api python /app/scripts/migrate.py status
 ```
 
-### 🔧 **トラブルシューティング**
+### トラブルシューティング
 
-#### **よくある問題と解決策**
+#### よくある問題と解決策
 
-**❌ 問題**: `No such file or directory: /app/scripts/migrate.py`
+**問題**: `No such file or directory: /app/scripts/migrate.py`
 ```bash
-# 解決策: スクリプトファイルをコピー
 docker cp scripts/migrate.py kaminote-janken-api:/app/scripts/
 docker cp scripts/seed.py kaminote-janken-api:/app/scripts/
 ```
 
-**❌ 問題**: `ModuleNotFoundError: No module named 'sqlalchemy'`
+**問題**: `ModuleNotFoundError: No module named 'sqlalchemy'`
 ```bash
-# 解決策: APIコンテナ内で実行（事前インストール済み）
 docker-compose exec api python /app/scripts/migrate.py migrate
 ```
 
-**❌ 問題**: 既存テーブルとの競合
+**問題**: 既存テーブルとの競合
 ```bash
-# 解決策: データベースをクリーンアップして再実行
 docker-compose exec mysql mysql -u root -ppassword -e "DROP DATABASE IF EXISTS janken_db; CREATE DATABASE janken_db;"
 docker-compose exec api python /app/scripts/migrate.py migrate
 ```
 
-**❌ 問題**: SQLAlchemyモデルとテーブル構造の不整合
+**問題**: SQLAlchemyモデルとテーブル構造の不整合
 ```bash
-# 解決策: モデル定義を確認し、マイグレーションファイルと整合させる
 # 1. src/shared/database/models.py を確認
 # 2. database/migrations/ のテーブル定義と比較
 # 3. 不整合があれば新しいマイグレーションファイルで修正
 ```
 
-### 💡 **ベストプラクティス**
+**問題**: user_statsテーブルの項目不足
+```bash
+docker-compose exec api python /app/database/migrations/006_user_stats_migration.py
+```
 
-#### **開発時の推奨ワークフロー**
-1. **毎回マイグレーション確認**: `docker-compose exec api python /app/scripts/migrate.py status`
-2. **新しいマイグレーション実行**: `docker-compose exec api python /app/scripts/migrate.py migrate`
-3. **問題発生時のロールバック**: `docker-compose exec api python /app/scripts/migrate.py rollback --steps 1`
-4. **定期的な状態確認**: データベースの整合性を定期的にチェック
+**問題**: ロビー画面でプロフィール画像が表示されない
+```bash
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "SELECT user_id, profile_image_url FROM users WHERE user_id LIKE 'test_user%';"
+docker-compose exec mysql mysql -u root -ppassword janken_db -e "SHOW TABLES LIKE 'user_stats';"
+```
 
-#### **ファイル管理のポイント**
-- **ボリュームマウント活用**: `src/`と`main-html/`は自動反映
-- **スクリプトファイル**: 初回のみコンテナコピーが必要
-- **マイグレーションファイル**: 新規追加時のみコンテナコピーが必要
+### ベストプラクティス
 
-### 🔄 **SQLAlchemy 2.0との連携**
+#### 開発時の推奨ワークフロー
+1. 毎回マイグレーション確認: `docker-compose exec api python /app/scripts/migrate.py status`
+2. 新しいマイグレーション実行: `docker-compose exec api python /app/scripts/migrate.py migrate`
+3. 問題発生時のロールバック: `docker-compose exec api python /app/scripts/migrate.py rollback --steps 1`
+4. 定期的な状態確認: データベースの整合性を定期的にチェック
+
+#### ファイル管理のポイント
+- ボリュームマウント活用: `src/`と`main-html/`は自動反映
+- スクリプトファイル: 初回のみコンテナコピーが必要
+- マイグレーションファイル: 新規追加時のみコンテナコピーが必要
+
+### SQLAlchemy 2.0との連携
 
 ```python
-# 非同期エンジンの作成
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
@@ -1105,28 +1124,30 @@ engine = create_async_engine(
     pool_pre_ping=True
 )
 
-# セッションファクトリー
 AsyncSessionLocal = sessionmaker(
     engine, class_=AsyncSession, expire_on_commit=False
 )
 ```
 
+SQLAlchemyは、MVCモデルの定義のために存在します。
+テーブル更新をしたら、以下のファイルを必ず更新します。
+server\src\shared\database\models.py
+
+また、SQLAlchemy 2.0の非同期セッションを使用するので、同期的なクエリ構文を使用することは禁止します。
+
 ### AWS環境での設定
 
 ```python
-# AWS RDS + Secrets Manager
 import boto3
 from sqlalchemy.ext.asyncio import create_async_engine
 
 async def get_db_connection():
-    # Secrets Manager から認証情報を取得
     secrets_client = boto3.client('secretsmanager')
     secret = secrets_client.get_secret_value(SecretId='rds-credentials')
     
-    # RDS Proxy経由での接続（推奨）
     engine = create_async_engine(
         f"mysql+aiomysql://{username}:{password}@{rds_proxy_endpoint}/{dbname}",
-        pool_size=1,  # Lambda では小さく設定
+        pool_size=1,
         max_overflow=0,
         pool_pre_ping=True,
         pool_recycle=3600
@@ -1429,8 +1450,10 @@ curl "http://localhost/storage/stats"
 2. データベース接続エラー
    - SQLAlchemy接続文字列の確認
    - MySQL/MariaDBサーバーの状態確認
-   - データベース名の確認（`janken_battle_complete`）
+   - データベース名の確認（`janken_db`）
    - 非同期ドライバー（aiomysql）のインストール確認
+   - **SQLAlchemy 2.0非同期構文の使用確認**
+   - **同期的なクエリ構文（`db.query()`）の使用禁止確認**
 
 3. OCR処理エラー
    - Tesseract のインストール確認
@@ -1447,6 +1470,21 @@ curl "http://localhost/storage/stats"
    - APIサーバーの動作確認（`http://localhost:3000/storage/health`）
    - MinIOサーバーの接続確認
    - プロキシエンドポイント使用を推奨（`/storage/proxy/`）
+
+6. SQLAlchemy 2.0非同期構文エラー
+   - **エラー**: `AttributeError: 'AsyncSession' object has no attribute 'query'`
+   - **原因**: 古い同期的なクエリ構文（`db.query()`）を使用している
+   - **解決策**: 
+     ```python
+     # ❌ 古い構文（禁止）
+     user = db.query(User).filter(User.user_id == user_id).first()
+     
+     # ✅ 新しい構文（必須）
+     stmt = select(User).where(User.user_id == user_id)
+     result = await db.execute(stmt)
+     user = result.scalar_one_or_none()
+     ```
+   - **確認ポイント**: `select()`、`await db.execute()`、`result.scalar_one_or_none()`の使用
 
 ### デバッグモード
 

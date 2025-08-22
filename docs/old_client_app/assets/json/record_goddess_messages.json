@@ -1,0 +1,502 @@
+[
+  {
+    "id": 1,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "今日もたくさんがんばったね！その記録、誇らしいよ。"
+  },
+  {
+    "id": 2,
+    "expression": "smile_open.png",
+    "line": "じゃんけんは運も実力のうちって、ほんとだよね！"
+  },
+  {
+    "id": 3,
+    "expression": "both_hands_happy.png",
+    "line": "負けた時こそ、君の成長が輝いてるんだよ✨"
+  },
+  {
+    "id": 4,
+    "expression": "hands_together_smile.png",
+    "line": "勝ちも負けも、君の大事な一歩。"
+  },
+  {
+    "id": 5,
+    "expression": "hands_together_smile.png",
+    "line": "戦いを重ねるたびに、君のじゃんけんが深くなるね。"
+  },
+  {
+    "id": 6,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "今日の戦績、しっかり刻まれてるよ📜"
+  },
+  {
+    "id": 7,
+    "expression": "wink_point_up.png",
+    "line": "あきらめない君が、わたしは大好きだよ！"
+  },
+  {
+    "id": 8,
+    "expression": "smile_open.png",
+    "line": "挑み続けるって、すごいことなんだよ。"
+  },
+  {
+    "id": 9,
+    "expression": "hand_on_chest_smile.png",
+    "line": "君の手が語る物語、もっと見せてほしいな。"
+  },
+  {
+    "id": 10,
+    "expression": "both_hands_happy.png",
+    "line": "やっぱり、続けてる人はかっこいい✨"
+  },
+  {
+    "id": 11,
+    "expression": "both_hands_happy.png",
+    "line": "その勝ち負け全部が、君の歴史になっていくんだね。"
+  },
+  {
+    "id": 12,
+    "expression": "hands_together_smile.png",
+    "line": "たとえ勝ち数が少なくても、価値はたくさんあるよ！"
+  },
+  {
+    "id": 13,
+    "expression": "smile_open.png",
+    "line": "君のデータ、ちゃんと成長を感じるよ。"
+  },
+  {
+    "id": 14,
+    "expression": "hands_together_smile.png",
+    "line": "戦った証って、数字より重いのかも。"
+  },
+  {
+    "id": 15,
+    "expression": "wink_point_up.png",
+    "line": "振り返ると、たくさんのドラマが詰まってるね。"
+  },
+  {
+    "id": 16,
+    "expression": "smile_open.png",
+    "line": "君のじゃんけん記録、宝物みたいだね。"
+  },
+  {
+    "id": 17,
+    "expression": "smile_open.png",
+    "line": "どんな結果も、次の一歩に繋がってるよ。"
+  },
+  {
+    "id": 18,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "結果に一喜一憂もいいけど、まずは自分をねぎらおう🍵"
+  },
+  {
+    "id": 19,
+    "expression": "smile_open.png",
+    "line": "記録は結果だけじゃない。君の勇気のしるしだよ。"
+  },
+  {
+    "id": 20,
+    "expression": "both_hands_happy.png",
+    "line": "負けてもいい、立ち止まらないのがすごい！"
+  },
+  {
+    "id": 21,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "いい勝負してると、つい見入っちゃうよ📺"
+  },
+  {
+    "id": 22,
+    "expression": "hands_together_smile.png",
+    "line": "じゃんけんって、奥が深いよね…感心しちゃう！"
+  },
+  {
+    "id": 23,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "勝率だけじゃ測れないものが、君にはある！"
+  },
+  {
+    "id": 24,
+    "expression": "both_hands_happy.png",
+    "line": "君のペースで、コツコツ積み上げてるのが見えるよ。"
+  },
+  {
+    "id": 25,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "結果がどうでも、今日も戦った勇気に拍手👏"
+  },
+  {
+    "id": 26,
+    "expression": "hands_together_smile.png",
+    "line": "数字じゃ語りきれない戦いがあるんだね。"
+  },
+  {
+    "id": 27,
+    "expression": "wink_point_up.png",
+    "line": "記録は時に悔しくても、君を映す鏡だよ。"
+  },
+  {
+    "id": 28,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "戦績見てると、応援したくなっちゃうんだよね！"
+  },
+  {
+    "id": 29,
+    "expression": "smile_open.png",
+    "line": "じゃんけんに込めた想い、伝わってくるよ。"
+  },
+  {
+    "id": 30,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "調子がいい日も悪い日も、どれも大事な経験！"
+  },
+  {
+    "id": 31,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "このグラフ、君だけの軌跡って感じがして好き。"
+  },
+  {
+    "id": 32,
+    "expression": "both_hands_happy.png",
+    "line": "負けの中にも、たくさんの「勝ち」があるよ！"
+  },
+  {
+    "id": 33,
+    "expression": "hand_on_chest_smile.png",
+    "line": "戦績って、自分との対話みたいなものだね。"
+  },
+  {
+    "id": 34,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "淡々と積み重ねる姿勢が、美しいと思うよ。"
+  },
+  {
+    "id": 35,
+    "expression": "wink_point_up.png",
+    "line": "戦ってる君の姿、すごく素敵だよ✨"
+  },
+  {
+    "id": 36,
+    "expression": "wink_point_up.png",
+    "line": "どれだけやったかが、目に見えるっていいね。"
+  },
+  {
+    "id": 37,
+    "expression": "smile_open.png",
+    "line": "たまには記録を振り返って、にっこりしよう😊"
+  },
+  {
+    "id": 38,
+    "expression": "smile_open.png",
+    "line": "「あのときは…」って思い出せる記録っていいよね。"
+  },
+  {
+    "id": 39,
+    "expression": "wink_point_up.png",
+    "line": "戦績があるだけで、君が頑張ってる証拠！"
+  },
+  {
+    "id": 40,
+    "expression": "hand_on_chest_smile.png",
+    "line": "たとえ微妙な結果でも、挑戦しただけで100点💯"
+  },
+  {
+    "id": 41,
+    "expression": "hand_on_chest_smile.png",
+    "line": "数字の裏に、たくさんのストーリーがあるんだよね。"
+  },
+  {
+    "id": 42,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "いい戦績も、そうでないのも、全部が君だよ。"
+  },
+  {
+    "id": 43,
+    "expression": "wink_point_up.png",
+    "line": "思ったより勝ってたりして、ちょっと嬉しいかも！？"
+  },
+  {
+    "id": 44,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "がんばってる記録、私がちゃんと見てるよ👀"
+  },
+  {
+    "id": 45,
+    "expression": "hand_on_chest_smile.png",
+    "line": "数字を超えた頑張り、私は知ってるよ！"
+  },
+  {
+    "id": 46,
+    "expression": "hands_together_smile.png",
+    "line": "戦績を見て「またがんばろ」って思えるってすごいよ。"
+  },
+  {
+    "id": 47,
+    "expression": "wink_point_up.png",
+    "line": "日々の積み重ね、ちゃんと形になってるんだね。"
+  },
+  {
+    "id": 48,
+    "expression": "hand_on_chest_smile.png",
+    "line": "すごくがんばってる…だからもっと自分を褒めて✨"
+  },
+  {
+    "id": 49,
+    "expression": "hand_on_chest_smile.png",
+    "line": "トータルで見ると、成長がはっきりわかるね！"
+  },
+  {
+    "id": 50,
+    "expression": "hand_on_chest_smile.png",
+    "line": "この数字が、君の物語なんだね。"
+  },
+  {
+    "id": 51,
+    "expression": "both_hands_happy.png",
+    "line": "次の一勝が、きっとまた君を前に進めてくれる。"
+  },
+  {
+    "id": 52,
+    "expression": "wink_point_up.png",
+    "line": "しっかり記録が残ってるって、誇らしいよね。"
+  },
+  {
+    "id": 53,
+    "expression": "hand_on_chest_smile.png",
+    "line": "自分のペースでOK！戦いの軌跡がまぶしいよ。"
+  },
+  {
+    "id": 54,
+    "expression": "hand_on_chest_smile.png",
+    "line": "変わっていく勝率、それも一つの旅だよね。"
+  },
+  {
+    "id": 55,
+    "expression": "both_hands_happy.png",
+    "line": "少しずつ、でも確実に、前に進んでるよ。"
+  },
+  {
+    "id": 56,
+    "expression": "hand_on_chest_smile.png",
+    "line": "勝ち数だけじゃなくて、継続力に注目だよ！"
+  },
+  {
+    "id": 57,
+    "expression": "hand_on_chest_smile.png",
+    "line": "「昨日より少し成長」って、実はすごいこと！"
+  },
+  {
+    "id": 58,
+    "expression": "both_hands_happy.png",
+    "line": "勝っても負けても、記録に残すって尊い✨"
+  },
+  {
+    "id": 59,
+    "expression": "both_hands_happy.png",
+    "line": "戦績からにじみ出る、君の強さに感動してるよ。"
+  },
+  {
+    "id": 60,
+    "expression": "smile_open.png",
+    "line": "数字を気にしすぎず、自分を好きでいてね。"
+  },
+  {
+    "id": 61,
+    "expression": "hands_together_smile.png",
+    "line": "日々の戦いが、君を強くしていってるよ！"
+  },
+  {
+    "id": 62,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "続けてきたこと、それが一番すごいこと！"
+  },
+  {
+    "id": 63,
+    "expression": "hands_together_smile.png",
+    "line": "頑張ってると、自然と笑顔も増えるね😊"
+  },
+  {
+    "id": 64,
+    "expression": "hands_together_smile.png",
+    "line": "戦績を見るたび、君を応援したくなるよ！"
+  },
+  {
+    "id": 65,
+    "expression": "wink_point_up.png",
+    "line": "今日も戦ってえらいっ！ちゃんと記録残ってる✨"
+  },
+  {
+    "id": 66,
+    "expression": "both_hands_happy.png",
+    "line": "失敗を恐れず戦ってる、その姿に胸を打たれるよ。"
+  },
+  {
+    "id": 67,
+    "expression": "hands_together_smile.png",
+    "line": "勝った数よりも、君の勇気がまぶしいよ！"
+  },
+  {
+    "id": 68,
+    "expression": "hand_on_chest_smile.png",
+    "line": "積み上げた回数、それが君の力の証。"
+  },
+  {
+    "id": 69,
+    "expression": "smile_open.png",
+    "line": "君の戦い方、なんだか応援したくなるんだよね。"
+  },
+  {
+    "id": 70,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "積極的にじゃんけんしてる姿、すてきだよ！"
+  },
+  {
+    "id": 71,
+    "expression": "hands_together_smile.png",
+    "line": "いつでも戻ってきてくれてうれしい😊"
+  },
+  {
+    "id": 72,
+    "expression": "smile_open.png",
+    "line": "思ったよりがんばってる…って気づいた？"
+  },
+  {
+    "id": 73,
+    "expression": "hand_on_chest_smile.png",
+    "line": "数字に惑わされず、君らしくいてね。"
+  },
+  {
+    "id": 74,
+    "expression": "hand_on_chest_smile.png",
+    "line": "勝率より継続率！それが大事✨"
+  },
+  {
+    "id": 75,
+    "expression": "hands_together_smile.png",
+    "line": "じゃんけんは奥が深い…君もその魅力の一部だね。"
+  },
+  {
+    "id": 76,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "数字がすべてじゃない。でも君はすごい！"
+  },
+  {
+    "id": 77,
+    "expression": "both_hands_happy.png",
+    "line": "データの先にある、君の努力を感じてるよ。"
+  },
+  {
+    "id": 78,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "勝敗よりも、取り組む姿勢が一番素敵だよ。"
+  },
+  {
+    "id": 79,
+    "expression": "hand_on_chest_smile.png",
+    "line": "どんなときも戦う姿が、私の誇り！"
+  },
+  {
+    "id": 80,
+    "expression": "wink_point_up.png",
+    "line": "戦い続ける勇気、それだけで感動もの！"
+  },
+  {
+    "id": 81,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "記録が君の軌跡を物語ってる📘"
+  },
+  {
+    "id": 82,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "連続でなくても、続けてるだけで十分すごい！"
+  },
+  {
+    "id": 83,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "記録がたまってきたね。いい感じだよ！"
+  },
+  {
+    "id": 84,
+    "expression": "both_hands_happy.png",
+    "line": "戦績画面って、まるで冒険の記録帳みたい📖"
+  },
+  {
+    "id": 85,
+    "expression": "smile_open.png",
+    "line": "今日の戦績、君らしさが出てていいね！"
+  },
+  {
+    "id": 86,
+    "expression": "smile_open.png",
+    "line": "続ける強さって、ほんとに素敵！"
+  },
+  {
+    "id": 87,
+    "expression": "wink_point_up.png",
+    "line": "いつも戦ってくれてありがとう💖"
+  },
+  {
+    "id": 88,
+    "expression": "hand_on_chest_smile.png",
+    "line": "じゃんけんってシンプルだけど、奥が深いよね。"
+  },
+  {
+    "id": 89,
+    "expression": "both_hands_happy.png",
+    "line": "数字を超えた、君の輝きがあるよ。"
+  },
+  {
+    "id": 90,
+    "expression": "smile_open.png",
+    "line": "データを見るたび、君の頑張りにうるっとくる…"
+  },
+  {
+    "id": 91,
+    "expression": "hand_on_chest_smile.png",
+    "line": "記録があるだけで、君の価値は何倍にもなる！"
+  },
+  {
+    "id": 92,
+    "expression": "hands_together_smile.png",
+    "line": "ちゃんと向き合ってる君、すごいよ！"
+  },
+  {
+    "id": 93,
+    "expression": "smile_open.png",
+    "line": "努力って、数字じゃ測れないこともあるよね。"
+  },
+  {
+    "id": 94,
+    "expression": "hand_on_chest_smile.png",
+    "line": "君の物語、ここからもっと続いていくよ！"
+  },
+  {
+    "id": 95,
+    "expression": "wink_point_up.png",
+    "line": "どんな日でも、記録をつけたら前進だよね。"
+  },
+  {
+    "id": 96,
+    "expression": "hand_on_chest_smile.png",
+    "line": "これからも、君の戦いをそばで見守るね🍀"
+  },
+  {
+    "id": 97,
+    "expression": "smile_open.png",
+    "line": "また戦って、また進んでいこうね！"
+  },
+  {
+    "id": 98,
+    "expression": "wink_point_up.png",
+    "line": "君は、いつだって挑戦者だよ✨"
+  },
+  {
+    "id": 99,
+    "expression": "hands_together_smile.png",
+    "line": "君のじゃんけん記録、これからも増えていくね。"
+  },
+  {
+    "id": 100,
+    "expression": "closed_eyes_peaceful.png",
+    "line": "ここに戻ってきてくれて、本当にうれしいよ。"
+  }
+]

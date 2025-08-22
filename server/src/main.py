@@ -49,6 +49,14 @@ except Exception as e:
     print(f"ERROR: battle_router import failed: {e}")
     battle_router = None
 
+# lobby_routerを追加
+try:
+    from .screens.lobby.router import router as lobby_router
+    print("DEBUG: lobby_router import OK")
+except Exception as e:
+    print(f"ERROR: lobby_router import failed: {e}")
+    lobby_router = None
+
 try:
     from .shared.exceptions.handlers import BaseApplicationError
     print("DEBUG: BaseApplicationError import OK")
@@ -113,6 +121,12 @@ if battle_router is not None:
     print("DEBUG: battle_router registered")
 else:
     print("WARNING: battle_router is None, skipping registration")
+
+if lobby_router is not None:
+    app.include_router(lobby_router)  # lobby_routerには既に prefix="/api/lobby" が含まれている
+    print("DEBUG: lobby_router registered")
+else:
+    print("WARNING: lobby_router is None, skipping registration")
 
 # インフラストラクチャルーター登録
 if metrics_router is not None:
@@ -350,6 +364,8 @@ if settings.debug:
             },
             "message": "デバッグ情報（開発環境のみ）"
         }
+
+
 
 
 # ライフサイクルイベント

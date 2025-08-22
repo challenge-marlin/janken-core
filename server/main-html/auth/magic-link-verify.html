@@ -218,7 +218,7 @@
             try {
                 showStatus('🔄 ログイン処理中...', true);
                 
-                // API呼び出し（実際のアプリと同じ）
+                // API呼び出し（新しいDB連携版）
                 const response = await fetch('/api/auth/verify-magic-link', {
                     method: 'POST',
                     headers: {
@@ -236,6 +236,9 @@
                     localStorage.setItem('jwt_token', data.data.token);
                     localStorage.setItem('magic_link_user', JSON.stringify(data.data.user));
                     
+                    // Flutterアプリとの連携（開発用）
+                    tryToLaunchFlutterApp(data.data.token, data.data.user);
+                    
                     // 3秒後に認証テストページにリダイレクト
                     setTimeout(() => {
                         window.location.href = 'index.html?login_success=true';
@@ -249,6 +252,82 @@
             }
         }
         
+        // Flutterアプリ起動を試行（開発用）
+        function tryToLaunchFlutterApp(jwtToken, userData) {
+            // Method 1: Custom URL Schemeでアプリを起動
+            const customSchemeUrl = `kaminotejanken://auth/login?token=${encodeURIComponent(jwtToken)}`;
+            
+            // Method 2: SharedPreferencesにトークンを保存（開発用）
+            // Flutterアプリが定期的にチェックする仕組み
+            localStorage.setItem('pending_magic_link_token', jwtToken);
+            localStorage.setItem('pending_magic_link_user', JSON.stringify(userData));
+            
+            // 新しいボタンを追加
+            addAppLaunchButton(customSchemeUrl, jwtToken);
+            
+            console.log('🚀 Flutterアプリ起動を試行:', customSchemeUrl);
+            
+            // 自動起動を試行（一部のブラウザでは動作）
+            try {
+                window.location.href = customSchemeUrl;
+            } catch (e) {
+                console.log('⚠️ 自動起動に失敗:', e);
+            }
+        }
+        
+        // アプリ起動ボタンを追加
+        function addAppLaunchButton(customSchemeUrl, jwtToken) {
+            const container = document.querySelector('.container');
+            const buttonHtml = `
+                <div style="margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 10px; border: 1px solid #4caf50;">
+                    <h4 style="margin-top: 0; color: #2e7d32;">📱 Flutterアプリでログイン</h4>
+                    <p style="color: #388e3c; margin: 10px 0;">認証が完了しました。アプリを起動してログインを完了してください。</p>
+                    
+                    <div style="margin: 15px 0;">
+                        <button class="btn btn-success" onclick="launchApp('${customSchemeUrl}')" style="margin: 5px;">
+                            🚀 アプリを起動
+                        </button>
+                        <button class="btn" onclick="copyToken('${jwtToken}')" style="margin: 5px;">
+                            📋 トークンをコピー
+                        </button>
+                        <button class="btn btn-warning" onclick="showInstructions()" style="margin: 5px;">
+                            ❓ 手動設定方法
+                        </button>
+                    </div>
+                    
+                    <div id="manualInstructions" style="display: none; margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px;">
+                        <h5>手動でアプリに設定する方法:</h5>
+                        <ol style="margin: 10px 0;">
+                            <li>Flutterアプリを起動</li>
+                            <li>設定画面で「Magic Link Token」を入力</li>
+                            <li>トークン: <code style="background: #f8f9fa; padding: 2px 4px;">${jwtToken}</code></li>
+                        </ol>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', buttonHtml);
+        }
+        
+        // アプリ起動関数
+        function launchApp(url) {
+            window.location.href = url;
+        }
+        
+        // トークンコピー関数
+        function copyToken(token) {
+            navigator.clipboard.writeText(token).then(() => {
+                alert('✅ JWTトークンがクリップボードにコピーされました');
+            }).catch(() => {
+                prompt('トークンを手動でコピーしてください:', token);
+            });
+        }
+        
+        // 手動設定方法を表示
+        function showInstructions() {
+            const instructions = document.getElementById('manualInstructions');
+            instructions.style.display = instructions.style.display === 'none' ? 'block' : 'none';
+        }
+
         // ページ読み込み時の処理
         document.addEventListener('DOMContentLoaded', function() {
             if (token) {

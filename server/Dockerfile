@@ -26,7 +26,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # アプリケーションコードをコピー
 COPY src/ ./src/
-COPY alembic.ini .
 
 # 環境変数の設定
 ENV PYTHONPATH=/app

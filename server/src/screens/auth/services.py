@@ -24,6 +24,7 @@ from ...shared.database.models import (
     create_captcha_expires_at, UserStats, AuthCredentials, UserProfile
 )
 from ...shared.services.jwt_service import jwt_service
+from ...shared.services.redis_service import redis_service
 from ...shared.database.connection import get_db_session as get_db
 from ...shared.config.auth_config import AuthConfig
 from ...shared.services.email_service import EmailService
@@ -82,9 +83,22 @@ class AuthService:
         magic_token = generate_magic_link_token()
         token_hash = self._hash_token(magic_token)
         
+        print(f"🔍 [DEBUG] Magic Link生成: email={email}, token={magic_token[:20]}..., hash={token_hash[:20]}...")
+        
         # データベース接続の処理を簡略化（開発用）
         if db is None:
-            # データベース接続なしの場合（開発モード）
+            # 開発モード: Redisでの一時保存（永続的で信頼性が高い）
+            # Redisにトークンを保存
+            redis_service.set_magic_link_token(token_hash, {
+                "email": email,
+                "token": magic_token,
+                "expires_at": create_magic_link_expires_at(),
+                "used": False,
+                "created_at": datetime.utcnow()
+            })
+            
+            print(f"🔍 [DEBUG] Redis保存完了: 保存件数={redis_service.get_magic_link_count()}")
+            
             result = {
                 "message": "Magic link sent.",
                 "token": magic_token  # 開発環境ではトークンを直接返却
@@ -148,17 +162,54 @@ class AuthService:
         if not token:
             raise AuthenticationError("トークンが指定されていません")
         
+        print(f"🔍 [DEBUG] Magic Link検証開始: token={token[:20]}...")
+        
         # データベース接続なしの場合（開発モード）
         if db is None:
-            # 簡易検証（開発用）
+            # 開発モード: Redisでの検証（永続的で信頼性が高い）
+            token_hash = self._hash_token(token)
+            print(f"🔍 [DEBUG] トークンハッシュ計算: hash={token_hash[:20]}...")
+            print(f"🔍 [DEBUG] Redis内トークン数: {redis_service.get_magic_link_count()}")
+            
+            # Redisからトークンを検索
+            token_data = redis_service.get_magic_link_token(token_hash)
+            
+            if not token_data:
+                print(f"❌ [DEBUG] トークンが見つかりません: hash={token_hash[:20]}...")
+                raise AuthenticationError("無効なMagic Linkトークンです")
+            
+            print(f"🔍 [DEBUG] トークン発見: email={token_data['email']}")
+            
+            # 有効期限チェック
+            if datetime.utcnow() > token_data["expires_at"]:
+                print(f"❌ [DEBUG] 有効期限切れ: expires_at={token_data['expires_at']}")
+                raise AuthenticationError("Magic Linkの有効期限が切れています")
+            
+            # 使用済みチェック
+            if token_data["used"]:
+                print(f"❌ [DEBUG] 既に使用済み")
+                raise AuthenticationError("このMagic Linkは既に使用されています")
+            
+            # トークンを使用済みにマーク（Redisで更新）
+            redis_service.update_magic_link_token(token_hash, {"used": True})
+            print(f"✅ [DEBUG] トークン検証成功")
+            
+            # ユーザーデータ生成
             user_data = {
-                "email": "test@example.com",
-                "user_id": f"dev_{token[:8]}",
-                "nickname": "テストユーザー",
-                "role": "user"
+                "email": token_data["email"],
+                "user_id": f"magic_user_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
+                "nickname": "Magic User",
+                "role": "user",
+                "last_login": datetime.utcnow().isoformat()
             }
             
-            jwt_token = self.jwt_service.generate_token(user_data)
+            # JWT生成
+            jwt_token = self.jwt_service.generate_token({
+                "email": user_data["email"],
+                "user_id": user_data["user_id"],
+                "nickname": user_data["nickname"],
+                "role": user_data["role"]
+            })
             
             return {
                 "token": jwt_token,
@@ -462,7 +513,7 @@ class AuthService:
                 user_id=str(uuid.uuid4()),
                 email=email,
                 nickname=email.split('@')[0],  # メールアドレスのローカル部分をニックネームに
-                profile_image_url='https://lesson01.myou-kou.com/avatars/defaultAvatar1.png',
+                profile_image_url='defaultAvatar1',
                 student_id_image_url='https://lesson01.myou-kou.com/avatars/defaultStudentId.png',
                 register_type='magic_link'
             )
