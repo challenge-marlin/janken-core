@@ -596,12 +596,17 @@ class AuthService:
         payload = {
             "user_id": user["user_id"],
             "email": user["email"],
-            "exp": datetime.utcnow() + AuthConfig.JWT_ACCESS_TOKEN_EXPIRE
+            "nickname": user.get("nickname", ""),
+            "exp": datetime.utcnow() + AuthConfig.JWT_ACCESS_TOKEN_EXPIRE,
+            "iss": "janken-api",  # 発行者を追加
+            "aud": "janken-app"   # 対象者を追加
         }
+        # JWTサービスと同じシークレットキーを使う
+        from ...shared.config.settings import settings
         return jwt.encode(
             payload,
-            AuthConfig.JWT_SECRET_KEY,
-            algorithm=AuthConfig.JWT_ALGORITHM
+            settings.jwt_secret_key,
+            algorithm=settings.jwt_algorithm
         )
 
     async def login_as_test_user(

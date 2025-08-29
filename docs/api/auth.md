@@ -26,7 +26,7 @@ sequenceDiagram
     participant E as メールサービス
     participant W as Webページ
     
-    C->>A: POST /api/auth/request-link
+    C->>A: POST /api/auth/request-magic-link
     A->>A: CAPTCHA検証
     A->>A: reCAPTCHA検証
     A->>A: Magic Linkトークン生成
@@ -37,7 +37,7 @@ sequenceDiagram
     C->>W: Magic Linkクリック
     W->>C: "アプリを起動してください"
     
-    C->>A: GET /api/auth/verify?token=xxx
+    C->>A: POST /api/auth/verify-magic-link
     A->>A: トークン検証
     A->>A: JWT生成
     A->>C: JWT + ユーザー情報
@@ -56,11 +56,25 @@ sequenceDiagram
     A->>C: JWT + ユーザー情報
 ```
 
+### 3. テストユーザーログインフロー（開発環境専用）
+
+```mermaid
+sequenceDiagram
+    participant C as クライアント
+    participant A as APIサーバー
+    
+    C->>A: POST /api/auth/test-login
+    A->>A: ユーザー番号検証（1-5）
+    A->>A: テストユーザー情報取得
+    A->>A: JWT生成
+    A->>C: JWT + テストユーザー情報
+```
+
 ## API エンドポイント
 
 ### 1. Magic Link リクエスト
 
-#### `POST /api/auth/request-link`
+#### `POST /api/auth/request-magic-link`
 
 Magic Linkをメールで送信します。
 
@@ -79,7 +93,7 @@ Magic Linkをメールで送信します。
 
 **パラメータ**
 - `email` (string, required): ユーザーのメールアドレス
-- `captcha` (object, required): じゃんけんCAPTCHA情報
+- `captcha` (object, optional): じゃんけんCAPTCHA情報
   - `opponent` (string): 出題された手（✊/✌️/✋）
   - `answer` (string): ユーザーの選択した手
   - `token` (string): CAPTCHA署名トークン
@@ -89,7 +103,11 @@ Magic Linkをメールで送信します。
 ```json
 {
   "success": true,
-  "message": "Magic link sent."
+  "message": "Magic link sent.",
+  "data": {
+    "token": "development_token_here"  // 開発環境のみ
+  },
+  "timestamp": "2024-01-01T00:00:00Z"
 }
 ```
 
@@ -101,7 +119,8 @@ Magic Linkをメールで送信します。
   "error": {
     "code": "ERROR_CODE",
     "details": "詳細情報"
-  }
+  },
+  "timestamp": "2024-01-01T00:00:00Z"
 }
 ```
 
@@ -112,9 +131,16 @@ Magic Linkをメールで送信します。
 
 ### 2. Magic Link 検証
 
-#### `GET /api/auth/verify?token={token}`
+#### `POST /api/auth/verify-magic-link`
 
 Magic Linkトークンを検証し、JWTを発行します。
+
+**リクエスト**
+```json
+{
+  "token": "magic_link_token_string"
+}
+```
 
 **パラメータ**
 - `token` (string, required): Magic Linkトークン
@@ -123,11 +149,18 @@ Magic Linkトークンを検証し、JWTを発行します。
 ```json
 {
   "success": true,
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "email": "user@example.com",
-    "role": "user"
-  }
+  "data": {
+    "user": {
+      "user_id": "uuid_string",
+      "email": "user@example.com",
+      "nickname": "ニックネーム",
+      "profile_image_url": "https://...",
+      "title": "称号",
+      "alias": "別名"
+    },
+    "token": "JWT_TOKEN"
+  },
+  "timestamp": "2024-01-01T00:00:00Z"
 }
 ```
 
@@ -139,7 +172,8 @@ Magic Linkトークンを検証し、JWTを発行します。
   "error": {
     "code": "INVALID_TOKEN",
     "details": "トークンが無効または期限切れです"
-  }
+  },
+  "timestamp": "2024-01-01T00:00:00Z"
 }
 ```
 
@@ -171,11 +205,19 @@ AWS環境では無効化されます。
 ```json
 {
   "success": true,
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "email": "dev@example.com",
-    "role": "developer"
-  }
+  "data": {
+    "user": {
+      "user_id": "dev_user",
+      "email": "dev@example.com",
+      "nickname": "開発者",
+      "role": "developer",
+      "profile_image_url": "https://...",
+      "title": "開発者",
+      "alias": "コードマスター"
+    },
+    "token": "JWT_TOKEN"
+  },
+  "timestamp": "2024-01-01T00:00:00Z"
 }
 ```
 
@@ -184,9 +226,63 @@ AWS環境では無効化されます。
 - `401`: AWS環境での実行試行
 - `500`: サーバーエラー
 
-### 4. 従来形式ログイン（互換性維持）
+### 4. テストユーザーログイン
 
-#### `POST /api/auth/UserInfo`
+#### `POST /api/auth/test-login`
+
+開発環境専用の5つのテストユーザーアカウントを使用してログインします。
+本番環境（AWS）では無効化されます。
+
+**リクエスト**
+```json
+{
+  "user_number": 1  // 1-5の整数
+}
+```
+
+**パラメータ**
+- `user_number` (integer, required): テストユーザー番号（1-5）
+
+**レスポンス（成功）**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "user_id": "test_user_1",
+      "email": "test1@example.com",
+      "nickname": "じゃんけんマスター",
+      "profile_image_url": "https://lesson01.myou-kou.com/avatars/defaultAvatar1.png",
+      "title": "テストプレイヤー",
+      "alias": "じゃんけんテスター"
+    },
+    "token": "JWT_TOKEN"
+  },
+  "timestamp": "2024-01-01T00:00:00Z"
+}
+```
+
+**レスポンス（エラー）**
+```json
+{
+  "success": false,
+  "message": "この機能は開発環境でのみ利用可能です",
+  "error": {
+    "code": "INVALID_ENVIRONMENT",
+    "details": "本番環境では利用できません"
+  },
+  "timestamp": "2024-01-01T00:00:00Z"
+}
+```
+
+**エラーケース**
+- `400`: 無効なユーザー番号
+- `403`: 本番環境での実行試行
+- `500`: サーバーエラー
+
+### 5. 従来形式ログイン（互換性維持）
+
+#### `POST /api/auth/user-info`
 
 従来のID/パスワード方式ログイン（既存クライアント互換性のため）
 
@@ -202,15 +298,72 @@ AWS環境では無効化されます。
 ```json
 {
   "success": true,
-  "user": {
-    "user_id": "testuser",
-    "nickname": "テストユーザー",
-    "title": "初心者",
-    "alias": "じゃんけん戦士",
-    "profile_image_url": null
-  }
+  "data": {
+    "user": {
+      "user_id": "testuser",
+      "nickname": "テストユーザー",
+      "title": "初心者",
+      "alias": "じゃんけん戦士",
+      "profile_image_url": null
+    },
+    "token": "JWT_TOKEN"
+  },
+  "timestamp": "2024-01-01T00:00:00Z"
 }
 ```
+
+### 6. DB連携ログイン
+
+#### `POST /api/auth/db-login`
+
+データベースに保存されたユーザー認証情報を使用したログイン機能
+
+**リクエスト**
+```json
+{
+  "email": "test1@example.com",
+  "password": "password123"
+}
+```
+
+**レスポンス（成功）**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "user_id": "test_user_1",
+      "email": "test1@example.com",
+      "nickname": "じゃんけんマスター",
+      "profile_image_url": "https://lesson01.myou-kou.com/avatars/defaultAvatar1.png",
+      "title": "テストプレイヤー",
+      "alias": "じゃんけんテスター"
+    },
+    "token": "JWT_TOKEN"
+  },
+  "timestamp": "2024-01-01T00:00:00Z"
+}
+```
+
+## テストユーザー情報（DB連携版）
+
+### 利用可能なテストユーザー
+
+| ユーザー番号 | ユーザーID | メールアドレス | ニックネーム | パスワード |
+|-------------|------------|----------------|--------------|------------|
+| 1 | `test_user_1` | `test1@example.com` | じゃんけんマスター | `password123` |
+| 2 | `test_user_2` | `test2@example.com` | バトルクイーン | `password123` |
+| 3 | `test_user_3` | `test3@example.com` | 勝負師 | `password123` |
+| 4 | `test_user_4` | `test4@example.com` | 新米戦士 | `password123` |
+| 5 | `test_user_5` | `test5@example.com` | 伝説のプレイヤー | `password123` |
+
+### 環境別の利用制限
+
+| 環境 | テストユーザー利用可否 | 備考 |
+|------|----------------------|------|
+| 開発環境 | ✓ | 制限なし |
+| VPS環境 | ✓ | 開発者IPのみ |
+| AWS環境 | ✗ | 完全無効化 |
 
 ## 認証・認可
 
@@ -227,24 +380,28 @@ AWS環境では無効化されます。
 **Payload**
 ```json
 {
+  "sub": "user_id",
   "email": "user@example.com",
+  "nickname": "ニックネーム",
   "role": "user",
   "iat": 1718820000,
-  "exp": 1719424800
+  "exp": 1719424800,
+  "jti": "jwt_id"
 }
 ```
 
 **有効期限**
-- アクセストークン: 24時間
-- Magic Linkトークン: 15分
+- アクセストークン: 15分
+- Magic Linkトークン: 24時間
+- リフレッシュトークン: 30日
 
 ### 環境別認証レベル
 
-| 環境 | Magic Link | 開発用認証 | reCAPTCHA | レート制限 |
-|------|------------|------------|-----------|------------|
-| 開発環境 | ✓ | ✓ | オプション | なし |
-| VPS環境 | ✓ | ✓ | 必須 | 1000req/min |
-| AWS環境 | ✓ | ✗ | 必須 | 2000req/min |
+| 環境 | Magic Link | 開発用認証 | テストユーザー | reCAPTCHA | レート制限 |
+|------|------------|------------|----------------|-----------|------------|
+| 開発環境 | ✓ | ✓ | ✓ | オプション | なし |
+| VPS環境 | ✓ | ✓ | ✓ | 必須 | 1000req/min |
+| AWS環境 | ✓ | ✗ | ✗ | 必須 | 2000req/min |
 
 ## Bot対策
 
@@ -279,7 +436,8 @@ AWS環境では無効化されます。
   "error": {
     "code": "ERROR_CODE",
     "details": "詳細情報"
-  }
+  },
+  "timestamp": "2024-01-01T00:00:00Z"
 }
 ```
 
@@ -291,16 +449,18 @@ AWS環境では無効化されます。
 | `INVALID_CAPTCHA` | CAPTCHA不正解 | 400 |
 | `INVALID_TOKEN` | 無効なトークン | 401 |
 | `RATE_LIMIT_EXCEEDED` | レート制限超過 | 429 |
+| `TEST_LOGIN_ERROR` | テストログインエラー | 400 |
+| `DB_LOGIN_ERROR` | DBログインエラー | 401 |
 | `INTERNAL_SERVER_ERROR` | サーバーエラー | 500 |
 
 ## セキュリティ要件
 
 ### 1. 通信セキュリティ
-- HTTPS通信必須
+- HTTPS通信必須（AWS環境）
 - CORS設定による適切なオリジン制限
 
 ### 2. トークンセキュリティ
-- Magic Linkトークンは15分で期限切れ
+- Magic Linkトークンは24時間で期限切れ
 - ワンタイム使用（使用後無効化）
 - JWT署名による改ざん防止
 
@@ -319,246 +479,59 @@ AWS環境では無効化されます。
 
 ```dart
 // Magic Link リクエスト
-final response = await http.post(
-  Uri.parse('$baseUrl/api/auth/request-link'),
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: jsonEncode({
-    'email': email,
-    'captcha': {
-      'opponent': '✌️',
-      'answer': '✊',
-      'token': captchaToken,
+Future<void> requestMagicLink(String email) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/api/auth/request-magic-link'),
+    headers: {
+      'Content-Type': 'application/json',
     },
-    'recaptcha_token': recaptchaToken,
-  }),
-);
+    body: jsonEncode({
+      'email': email,
+      'captcha': {
+        'opponent': '✌️',
+        'answer': '✊',
+        'token': captchaToken,
+      },
+      'recaptcha_token': recaptchaToken,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    if (data['success']) {
+      // 開発環境ではトークンを直接取得可能
+      final token = data['data']?['token'];
+      if (token != null) {
+        // トークンを保存して検証に使用
+        await storage.write(key: 'magic_link_token', value: token);
+      }
+    }
+  }
+}
 
 // Magic Link 検証
-final verifyResponse = await http.get(
-  Uri.parse('$baseUrl/api/auth/verify?token=$magicToken'),
-);
+Future<void> verifyMagicLink(String token) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/api/auth/verify-magic-link'),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({'token': token}),
+  );
 
-if (verifyResponse.statusCode == 200) {
-  final data = jsonDecode(verifyResponse.body);
-  final jwt = data['token'];
-  // JWTを保存して以降のAPIリクエストで使用
-}
-```
-
-### サーバー側（FastAPI）
-
-```python
-# JWT認証が必要なエンドポイントでの使用
-from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer
-
-security = HTTPBearer()
-
-async def get_current_user(token: str = Depends(security)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        email = payload.get("email")
-        if email is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        return {"email": email}
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-@app.get("/api/protected")
-async def protected_endpoint(current_user: dict = Depends(get_current_user)):
-    return {"message": f"Hello {current_user['email']}"}
-```
-
-## 今後の拡張予定
-
-1. **ソーシャルログイン対応**
-   - Google OAuth 2.0
-   - Apple Sign-In
-
-2. **多要素認証**
-   - SMS認証
-   - TOTP（Time-based One-Time Password）
-
-3. **セッション管理強化**
-   - リフレッシュトークン
-   - デバイス管理
-
-4. **セキュリティ強化**
-   - デバイスフィンガープリンティング
-   - 異常ログイン検知 
-
-## テストユーザー認証（開発環境専用）
-
-### 1. テストユーザーログイン
-
-#### `POST /api/auth/test-login`
-
-開発環境専用の5つのテストユーザーアカウントを使用してログインします。
-本番環境（AWS）では無効化されます。
-
-**リクエスト**
-```json
-{
-    "user_number": 1  // 1-5の整数
-}
-```
-
-**パラメータ**
-- `user_number` (integer, required): テストユーザー番号（1-5）
-
-**レスポンス（成功）**
-```json
-{
-    "success": true,
-    "data": {
-        "user": {
-            "user_id": "test_user_1",
-            "email": "test1@example.com",
-            "nickname": "テストユーザー1",
-            "profile_image_url": "https://lesson01.myou-kou.com/avatars/defaultAvatar1.png",
-            "title": "テストプレイヤー",
-            "alias": "じゃんけんテスター"
-        },
-        "token": "JWT_TOKEN"
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    if (data['success']) {
+      final jwt = data['data']['token'];
+      final user = data['data']['user'];
+      
+      // JWTを保存
+      await storage.write(key: 'jwt_token', value: jwt);
+      await storage.write(key: 'user_data', value: jsonEncode(user));
     }
+  }
 }
-```
 
-**レスポンス（エラー）**
-```json
-{
-    "success": false,
-    "message": "この機能は開発環境でのみ利用可能です",
-    "error": {
-        "code": "INVALID_ENVIRONMENT",
-        "details": "本番環境では利用できません"
-    }
-}
-```
-
-**エラーケース**
-- `400`: 無効なユーザー番号
-- `403`: 本番環境での実行試行
-- `500`: サーバーエラー
-
-### 2. テストユーザーデータ仕様
-
-各テストユーザーは以下の情報を持ちます：
-
-```json
-{
-    "user_id": "test_user_N",  // Nは1-5
-    "email": "testN@example.com",
-    "nickname": "テストユーザーN",
-    "profile_image_url": "https://lesson01.myou-kou.com/avatars/defaultAvatarN.png",
-    "title": "テストプレイヤー",
-    "alias": "じゃんけんテスターN"
-}
-```
-
-### 3. 環境別の利用制限
-
-| 環境 | テストユーザー利用可否 | 備考 |
-|------|----------------------|------|
-| 開発環境 | ✓ | 制限なし |
-| VPS環境 | ✓ | 開発者IPのみ |
-| AWS環境 | ✗ | 完全無効化 |
-
-## Magic Link認証の拡張仕様
-
-### 1. Magic Linkリクエスト（拡張）
-
-#### `POST /api/auth/magic-link`
-
-Magic Linkをメールで送信します。環境に応じて認証レベルが変化します。
-
-**環境別の要件**
-
-| 環境 | CAPTCHA | reCAPTCHA | レート制限 |
-|------|---------|-----------|------------|
-| 開発環境 | オプション | 不要 | 無制限 |
-| VPS環境 | 必須 | オプション | 5回/5分 |
-| AWS環境 | 必須 | 必須 | 5回/5分 |
-
-**メール送信仕様**
-
-1. メールテンプレート
-```html
-件名: [じゃんけんゲーム] ログインリンク
-
-本文:
-こんにちは！
-
-以下のリンクからログインしてください：
-{magic_link_url}
-
-このリンクは15分間有効です。
-期限切れの場合は、再度ログインリンクを要求してください。
-
-※このメールに心当たりがない場合は、無視してください。
-```
-
-2. Magic Link URL形式
-```
-開発環境: http://localhost:3000/auth/verify?token={token}
-VPS環境: https://dev.myou-kou.com/auth/verify?token={token}
-AWS環境: https://myou-kou.com/auth/verify?token={token}
-```
-
-### 2. Magic Link検証（拡張）
-
-#### `POST /api/auth/verify-magic-link`
-
-Magic Linkトークンを検証し、JWTを発行します。
-
-**リクエスト**
-```json
-{
-    "token": "magic_link_token_string"
-}
-```
-
-**レスポンス（成功）**
-```json
-{
-    "success": true,
-    "data": {
-        "user": {
-            "user_id": "uuid_string",
-            "email": "user@example.com",
-            "nickname": "ニックネーム",
-            "profile_image_url": "https://...",
-            "title": "称号",
-            "alias": "別名"
-        },
-        "token": "JWT_TOKEN"
-    }
-}
-```
-
-**セキュリティ仕様**
-
-1. トークン形式
-```
-{timestamp}_{email}_{random_string}
-```
-
-2. 検証ルール
-- タイムスタンプが15分以内
-- トークンが未使用
-- メールアドレスが有効
-
-3. 使用後の処理
-- トークンを使用済みとしてマーク
-- 同じメールアドレスの未使用トークンを無効化
-
-## 実装例の更新
-
-### クライアント側（Flutter）
-
-```dart
 // テストユーザーログイン
 Future<void> loginAsTestUser(int userNumber) async {
   final response = await http.post(
@@ -569,25 +542,38 @@ Future<void> loginAsTestUser(int userNumber) async {
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
-    final jwt = data['data']['token'];
-    // JWTを保存
-    await storage.write(key: 'jwt_token', value: jwt);
+    if (data['success']) {
+      final jwt = data['data']['token'];
+      final user = data['data']['user'];
+      
+      // JWTを保存
+      await storage.write(key: 'jwt_token', value: jwt);
+      await storage.write(key: 'user_data', value: jsonEncode(user));
+    }
   }
 }
 
-// Magic Link検証
-Future<void> verifyMagicLink(String token) async {
+// 開発用ログイン
+Future<void> devLogin(String email, String mode) async {
   final response = await http.post(
-    Uri.parse('$baseUrl/api/auth/verify-magic-link'),
+    Uri.parse('$baseUrl/api/auth/dev-login'),
     headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({'token': token}),
+    body: jsonEncode({
+      'email': email,
+      'mode': mode,
+    }),
   );
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
-    final jwt = data['data']['token'];
-    // JWTを保存
-    await storage.write(key: 'jwt_token', value: jwt);
+    if (data['success']) {
+      final jwt = data['data']['token'];
+      final user = data['data']['user'];
+      
+      // JWTを保存
+      await storage.write(key: 'jwt_token', value: jwt);
+      await storage.write(key: 'user_data', value: jsonEncode(user));
+    }
   }
 }
 ```
@@ -648,4 +634,51 @@ async def verify_magic_link(request: MagicLinkRequest):
             "token": jwt_token
         }
     }
-``` 
+```
+
+## 今後の拡張予定
+
+1. **ソーシャルログイン対応**
+   - Google OAuth 2.0
+   - Apple Sign-In
+
+2. **多要素認証**
+   - SMS認証
+   - TOTP（Time-based One-Time Password）
+
+3. **セッション管理強化**
+   - リフレッシュトークン
+   - デバイス管理
+
+4. **セキュリティ強化**
+   - デバイスフィンガープリンティング
+   - 異常ログイン検知
+
+## 現在の実装状況
+
+- ✅ Magic Link認証（Redis対応）
+- ✅ テストユーザーログイン（5ユーザー）
+- ✅ 開発用簡易認証
+- ✅ 従来形式ログイン（互換性維持）
+- ✅ DB連携ログイン
+- ✅ JWT管理システム
+- ✅ 統一エラーハンドリング
+- ✅ 型安全なPydanticスキーマ
+- 🔄 メール送信機能（開発環境では直接トークン返却）
+- 🔄 本番環境でのCAPTCHA強化
+
+## 注意事項
+
+1. **開発環境専用機能**
+   - テストユーザーログインは開発環境でのみ利用可能
+   - 本番環境（AWS）では完全に無効化
+
+2. **セキュリティ**
+   - 開発環境でも適切な認証が必要
+   - テストユーザーのパスワードは安全に管理
+
+3. **環境別設定**
+   - 各環境で適切な認証レベルを設定
+   - 開発環境と本番環境で異なる動作
+
+この仕様により、開発環境から本番環境まで、段階的にセキュリティレベルを向上させながら、効率的な開発とテストが可能になります。 

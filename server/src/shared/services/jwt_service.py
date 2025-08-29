@@ -84,7 +84,7 @@ class JWTService:
             # Bearer プレフィックスを除去
             if token.startswith("Bearer "):
                 token = token[7:]
-            
+
             # JWT検証・デコード
             payload = jwt.decode(
                 token,
@@ -93,17 +93,19 @@ class JWTService:
                 audience="janken-app",
                 issuer="janken-api"
             )
-            
+
             return payload
-            
+
         except jwt.ExpiredSignatureError:
             raise AuthenticationError("トークンの有効期限が切れています")
-        except jwt.InvalidTokenError:
-            raise AuthenticationError("無効なトークンです")
+        except jwt.InvalidTokenError as e:
+            raise AuthenticationError(f"無効なトークンです: {str(e)}")
         except jwt.InvalidAudienceError:
             raise AuthenticationError("トークンの対象者が無効です")
         except jwt.InvalidIssuerError:
             raise AuthenticationError("トークンの発行者が無効です")
+        except jwt.InvalidSignatureError:
+            raise AuthenticationError("トークンの署名が無効です（シークレットキーが一致しません）")
         except Exception as e:
             raise AuthenticationError(f"トークン検証に失敗しました: {str(e)}")
     

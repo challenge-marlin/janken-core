@@ -15,8 +15,8 @@ class JankenBattleClient {
         
         // 設定
         this.config = {
-            apiBase: window.location.protocol.replace('http', 'ws') + '//' + window.location.host,
-            httpApiBase: window.location.origin
+            apiBase: 'ws://localhost:3000',  // デフォルトWebSocket URL
+            httpApiBase: 'http://localhost:3000'  // デフォルトHTTP URL
         };
         
         // 初期化
@@ -26,7 +26,17 @@ class JankenBattleClient {
     init() {
         this.setupEventListeners();
         this.checkExistingAuth();
+        this.initializeConfig();
         this.log('info', 'じゃんけんバトルクライアント初期化完了');
+    }
+    
+    initializeConfig() {
+        // 環境設定の初期化
+        const select = document.getElementById('apiBaseUrl');
+        if (select) {
+            select.value = 'http://localhost:3000';  // デフォルト値を設定
+            this.updateApiBaseUrl();
+        }
     }
     
     setupEventListeners() {
@@ -35,12 +45,19 @@ class JankenBattleClient {
             this.handleDevLogin();
         });
         
-        document.getElementById('magicLinkBtn').addEventListener('click', () => {
-            this.handleMagicLinkRequest();
-        });
+
         
         document.getElementById('logoutBtn').addEventListener('click', () => {
             this.logout();
+        });
+        
+        // 環境設定関連
+        document.getElementById('apiBaseUrl').addEventListener('change', (e) => {
+            if (e.target.value === 'custom') {
+                document.getElementById('customUrlGroup').style.display = 'block';
+            } else {
+                document.getElementById('customUrlGroup').style.display = 'none';
+            }
         });
         
         // WebSocket接続
@@ -126,15 +143,16 @@ class JankenBattleClient {
     }
     
     async handleDevLogin() {
-        const userId = document.getElementById('devUserSelect').value;
-        if (!userId) {
+        const userNumber = document.getElementById('devUserSelect').value;
+        if (!userNumber) {
             alert('テストユーザーを選択してください');
             return;
         }
         
         let data = null;
         try {
-            this.log('info', `開発用ログイン試行: User${userId}`);
+            this.log('info', `開発用ログイン試行: テストユーザー${userNumber}`);
+            this.log('info', `API URL: ${this.config.httpApiBase}/api/auth/test-login`);
             
             // Laravel風新APIのテストユーザーログインAPIを呼び出し
             const response = await fetch(`${this.config.httpApiBase}/api/auth/test-login`, {
@@ -143,16 +161,28 @@ class JankenBattleClient {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    user_number: parseInt(userId)  // サーバー側のスキーマに合わせる
+                    user_number: parseInt(userNumber)  // サーバー側のスキーマに合わせる
                 })
             });
             
-            data = await response.json();
-            this.log('info', `テストログインレスポンス:`, data);
+            this.log('info', `HTTP Status: ${response.status} ${response.statusText}`);
+            
+            // レスポンスの内容を確認
+            const responseText = await response.text();
+            this.log('info', `レスポンス本文: ${responseText.substring(0, 200)}...`);
+            
+            try {
+                data = JSON.parse(responseText);
+                this.log('info', `テストログインレスポンス:`, data);
+            } catch (parseError) {
+                this.log('error', `JSONパースエラー: ${parseError.message}`);
+                this.log('error', `レスポンス本文: ${responseText}`);
+                throw new Error(`サーバーから無効なレスポンスが返されました: ${responseText.substring(0, 100)}...`);
+            }
             
             if (data.success && data.data) {
-                // Laravel風新APIのレスポンス形式に対応
-                this.jwtToken = data.data.token;  // 統一されたtoken構造
+                // サーバー側のレスポンス形式に対応
+                this.jwtToken = data.data.token;  // JWTトークン
                 this.currentUser = {
                     id: data.data.user.user_id,  // サーバーから返されたuser_idを使用
                     nickname: data.data.user.nickname,
@@ -166,8 +196,9 @@ class JankenBattleClient {
                 this.showLoggedInState();
                 this.log('success', `開発用ログイン成功: ${this.currentUser.nickname}`);
                 
-                // ユーザー統計を取得・表示
-                await this.loadUserStats();
+                // ユーザー統計を取得・表示（一時的に無効化）
+                // await this.loadUserStats();
+                this.log('info', '統計取得は一時的に無効化されています');
             } else {
                 throw new Error(data.message || data.error?.details || '認証に失敗しました');
             }
@@ -178,44 +209,7 @@ class JankenBattleClient {
         }
     }
     
-    async handleMagicLinkRequest() {
-        const email = document.getElementById('emailInput').value;
-        if (!email) {
-            alert('メールアドレスを入力してください');
-            return;
-        }
-        
-        try {
-            this.log('info', `Magic Link送信試行: ${email}`);
-            
-            const response = await fetch(`${this.config.httpApiBase}/api/auth/request-magic-link`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    email: email
-                })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                alert('Magic Linkを送信しました。メールを確認してください。');
-                this.log('success', `Magic Link送信完了: ${email}`);
-                
-                // デバッグ用: Magic Link URLをログに表示
-                if (data.data && data.data.token) {
-                    this.log('info', `Magic Link Token: ${data.data.token}`);
-                }
-            } else {
-                throw new Error(data.message || 'Magic Link送信に失敗しました');
-            }
-        } catch (error) {
-            this.log('error', `Magic Link送信エラー: ${error.message}`);
-            alert(`Magic Link送信エラー: ${error.message}`);
-        }
-    }
+
     
     logout() {
         this.jwtToken = null;
@@ -235,6 +229,9 @@ class JankenBattleClient {
         document.getElementById('battleSection').style.display = 'block';
         document.getElementById('userDisplay').textContent = this.currentUser.nickname;
         document.getElementById('logoutBtn').style.display = 'inline-block';
+        
+        // 接続状態を初期化（接続ボタンを有効化）
+        this.updateConnectionStatus('disconnected');
     }
     
     showLoggedOutState() {
@@ -257,15 +254,29 @@ class JankenBattleClient {
             return;
         }
         
+        if (!this.jwtToken) {
+            alert('JWTトークンがありません。先にログインしてください。');
+            return;
+        }
+        
         if (this.websocket) {
             this.log('warning', '既にWebSocketが接続されています');
             return;
         }
         
+        this.attemptWebSocketConnection();
+    }
+
+    attemptWebSocketConnection() {
         try {
+            // WebSocket URL（ユーザーIDをURLパラメータに含める）
             const wsUrl = `${this.config.apiBase}/api/battle/ws/${this.currentUser.id}`;
             this.log('info', `WebSocket接続試行: ${wsUrl}`);
-            
+            this.log('info', `API Base URL: ${this.config.apiBase}`);
+            this.log('info', `ユーザーID: ${this.currentUser.id}`);
+            this.log('info', `JWTトークン長: ${this.jwtToken.length}文字`);
+            this.log('info', `JWTトークン先頭: ${this.jwtToken.substring(0, 30)}...`);
+
             this.websocket = new WebSocket(wsUrl);
             this.setupWebSocketHandlers();
             this.updateConnectionStatus('connecting');
@@ -278,8 +289,11 @@ class JankenBattleClient {
     
     setupWebSocketHandlers() {
         this.websocket.onopen = () => {
-            this.log('success', 'WebSocket接続確立');
-            this.updateConnectionStatus('connected');
+            this.log('info', 'WebSocket接続確立');
+            this.updateConnectionStatus('connecting');
+
+            // 接続確立後に認証メッセージを送信
+            this.sendAuthMessage();
         };
         
         this.websocket.onmessage = (event) => {
@@ -291,8 +305,34 @@ class JankenBattleClient {
             }
         };
         
-        this.websocket.onclose = () => {
-            this.log('warning', 'WebSocket接続が閉じられました');
+        this.websocket.onclose = (event) => {
+            this.log('warning', `WebSocket接続が閉じられました: ${event.code} - ${event.reason}`);
+
+            // エラーコードに基づいて適切な処理
+            switch (event.code) {
+                case 4001:
+                    this.log('error', '認証エラー: トークンまたはユーザーIDがありません');
+                    alert('認証エラー: トークンまたはユーザーIDがありません。再度ログインしてください。');
+                    this.logout();
+                    break;
+                case 4002:
+                    this.log('error', '認証エラー: 無効なトークンです');
+                    alert('認証エラー: 無効なトークンです。再度ログインしてください。');
+                    this.logout();
+                    break;
+                case 4003:
+                    this.log('error', '認証エラー: ユーザーIDが一致しません');
+                    alert('認証エラー: ユーザーIDが一致しません。再度ログインしてください。');
+                    this.logout();
+                    break;
+                case 1000:
+                    this.log('info', '正常な切断');
+                    break;
+                default:
+                    this.log('warning', `予期しない切断: ${event.code} - ${event.reason}`);
+                    break;
+            }
+
             this.updateConnectionStatus('disconnected');
             this.websocket = null;
         };
@@ -346,13 +386,38 @@ class JankenBattleClient {
     }
     
     // =====================
+    // WebSocket認証
+    // =====================
+
+    sendAuthMessage() {
+        if (!this.websocket || this.websocket.readyState !== WebSocket.OPEN) {
+            this.log('error', 'WebSocketが接続されていません');
+            return false;
+        }
+
+        const authMessage = {
+            type: 'auth',
+            data: {
+                token: this.jwtToken
+            },
+            timestamp: new Date().toISOString(),
+            messageId: this.generateUUID()
+        };
+
+        this.websocket.send(JSON.stringify(authMessage));
+        this.log('info', '認証メッセージ送信', authMessage);
+        return true;
+    }
+
+    // =====================
     // WebSocketメッセージ処理
     // =====================
-    
+
     handleWebSocketMessage(message) {
         this.log('info', `受信: ${message.type}`, message);
-        
+
         const handlers = {
+            'auth_success': this.onAuthSuccess.bind(this),
             'connection_established': this.onConnectionEstablished.bind(this),
             'matching_started': this.onMatchingStarted.bind(this),
             'matching_status': this.onMatchingStatus.bind(this),
@@ -368,7 +433,7 @@ class JankenBattleClient {
             'error': this.onError.bind(this),
             'pong': this.onPong.bind(this)
         };
-        
+
         const handler = handlers[message.type];
         if (handler) {
             handler(message.data);
@@ -376,7 +441,17 @@ class JankenBattleClient {
             this.log('warning', `未処理のメッセージタイプ: ${message.type}`);
         }
     }
-    
+
+    onAuthSuccess(data) {
+        this.log('success', `認証成功: ${data.user_id || this.currentUser.id}`);
+        if (data.nickname) {
+            this.currentUser.nickname = data.nickname;
+            document.getElementById('userDisplay').textContent = data.nickname;
+        }
+        this.updateConnectionStatus('connected');
+        this.updateStatus('接続完了', 'マッチング開始ボタンを押して対戦を始めてください');
+    }
+
     onConnectionEstablished(data) {
         this.log('success', `接続確立: ${data.sessionId}`);
         if (data.nickname) {
@@ -462,11 +537,208 @@ class JankenBattleClient {
     onError(data) {
         const error = data.error || {};
         this.log('error', `エラー: ${error.code} - ${error.message}`);
+
+        // 認証エラーの場合、ログアウトして再ログインを促す
+        if (error.code === 'INVALID_TOKEN' || error.code === 'USER_ID_MISMATCH' ||
+            error.code === 'MISSING_AUTH_DATA' || error.code === 'INVALID_AUTH_FORMAT') {
+            alert(`認証エラー: ${error.message || '認証に失敗しました'}\n再度ログインしてください。`);
+            this.logout();
+            return;
+        }
+
         alert(`エラー: ${error.message || '不明なエラーが発生しました'}`);
     }
     
     onPong(data) {
         this.log('info', 'Pong受信', data);
+    }
+    
+    // =====================
+    // UI更新メソッド
+    // =====================
+    
+    updateStatus(title, message) {
+        const titleElement = document.getElementById('statusTitle');
+        const messageElement = document.getElementById('statusMessage');
+        if (titleElement) titleElement.textContent = title;
+        if (messageElement) messageElement.textContent = message;
+    }
+    
+    showMatchingInfo() {
+        const matchingInfo = document.getElementById('matchingInfo');
+        if (matchingInfo) matchingInfo.style.display = 'block';
+    }
+    
+    hideMatchingInfo() {
+        const matchingInfo = document.getElementById('matchingInfo');
+        if (matchingInfo) matchingInfo.style.display = 'none';
+    }
+    
+    updateMatchingDisplay(position, waitTime) {
+        const queuePosition = document.getElementById('queuePosition');
+        const estimatedWait = document.getElementById('estimatedWait');
+        if (queuePosition) queuePosition.textContent = position || '-';
+        if (estimatedWait) estimatedWait.textContent = waitTime || '-';
+    }
+    
+    showOpponentInfo(opponent) {
+        const opponentInfo = document.getElementById('opponentInfo');
+        const opponentName = document.getElementById('opponentName');
+        const opponentId = document.getElementById('opponentId');
+        const readyBtn = document.getElementById('readyBtn');
+        
+        if (opponentInfo) opponentInfo.style.display = 'block';
+        if (opponentName) opponentName.textContent = opponent.nickname || 'Unknown';
+        if (opponentId) opponentId.textContent = opponent.userId || 'Unknown';
+        
+        // 準備完了ボタンを表示
+        if (readyBtn) readyBtn.style.display = 'inline-block';
+    }
+    
+    hideOpponentInfo() {
+        const opponentInfo = document.getElementById('opponentInfo');
+        if (opponentInfo) opponentInfo.style.display = 'none';
+    }
+    
+    hideOpponentReady() {
+        const readyBtn = document.getElementById('readyBtn');
+        if (readyBtn) readyBtn.style.display = 'none';
+    }
+    
+    showHandSelection() {
+        const handSelection = document.getElementById('handSelection');
+        if (handSelection) handSelection.style.display = 'block';
+        this.enableHandSelection();
+    }
+    
+    hideHandSelection() {
+        const handSelection = document.getElementById('handSelection');
+        if (handSelection) handSelection.style.display = 'none';
+    }
+    
+    enableHandSelection() {
+        document.querySelectorAll('.hand-btn').forEach(btn => {
+            btn.classList.remove('disabled', 'selected');
+            btn.disabled = false;
+        });
+        const handStatus = document.getElementById('handStatus');
+        if (handStatus) handStatus.textContent = '手を選択してください';
+    }
+    
+    disableHandSelection() {
+        document.querySelectorAll('.hand-btn').forEach(btn => {
+            btn.disabled = true;
+        });
+        const handStatus = document.getElementById('handStatus');
+        if (handStatus) handStatus.textContent = '手を送信しました。相手を待っています...';
+    }
+    
+    resetHandSelection() {
+        document.querySelectorAll('.hand-btn').forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('selected');
+        });
+        const handStatus = document.getElementById('handStatus');
+        if (handStatus) handStatus.textContent = '手を選択してください';
+    }
+    
+    showBattleResult(result) {
+        const battleResult = document.getElementById('battleResult');
+        const resultTitle = document.getElementById('resultTitle');
+        const yourHand = document.getElementById('yourHand');
+        const opponentHand = document.getElementById('opponentHand');
+        const yourResult = document.getElementById('yourResult');
+        const opponentResult = document.getElementById('opponentResult');
+        const nextRoundBtn = document.getElementById('nextRoundBtn');
+        const newBattleBtn = document.getElementById('newBattleBtn');
+        
+        if (battleResult) battleResult.style.display = 'block';
+        
+        // 結果表示
+        if (result.player1 && result.player1.userId === this.currentUser.id) {
+            if (yourHand) yourHand.textContent = this.getHandEmoji(result.player1.hand);
+            if (yourResult) yourResult.textContent = this.getResultText(result.player1.result);
+            if (opponentHand) opponentHand.textContent = this.getHandEmoji(result.player2.hand);
+            if (opponentResult) opponentResult.textContent = this.getResultText(result.player2.result);
+        } else {
+            if (yourHand) yourHand.textContent = this.getHandEmoji(result.player2.hand);
+            if (yourResult) yourResult.textContent = this.getResultText(result.player2.result);
+            if (opponentHand) opponentHand.textContent = this.getHandEmoji(result.player1.hand);
+            if (opponentResult) opponentResult.textContent = this.getResultText(result.player1.result);
+        }
+        
+        // ボタン表示制御
+        if (nextRoundBtn) nextRoundBtn.style.display = 'none';
+        if (newBattleBtn) newBattleBtn.style.display = 'block';
+    }
+    
+    showDrawResult(result) {
+        const battleResult = document.getElementById('battleResult');
+        const resultTitle = document.getElementById('resultTitle');
+        const yourHand = document.getElementById('yourHand');
+        const opponentHand = document.getElementById('opponentHand');
+        const yourResult = document.getElementById('yourResult');
+        const opponentResult = document.getElementById('opponentResult');
+        const nextRoundBtn = document.getElementById('nextRoundBtn');
+        const newBattleBtn = document.getElementById('newBattleBtn');
+        
+        if (battleResult) battleResult.style.display = 'block';
+        if (resultTitle) resultTitle.textContent = '引き分け！';
+        
+        // 引き分け結果表示
+        if (result.player1 && result.player1.userId === this.currentUser.id) {
+            if (yourHand) yourHand.textContent = this.getHandEmoji(result.player1.hand);
+            if (yourResult) yourResult.textContent = '引き分け';
+            if (opponentHand) opponentHand.textContent = this.getHandEmoji(result.player2.hand);
+            if (opponentResult) opponentResult.textContent = '引き分け';
+        } else {
+            if (yourHand) yourHand.textContent = this.getHandEmoji(result.player2.hand);
+            if (yourResult) yourResult.textContent = '引き分け';
+            if (opponentHand) opponentHand.textContent = this.getHandEmoji(result.player1.hand);
+            if (opponentResult) opponentResult.textContent = '引き分け';
+        }
+        
+        // ボタン表示制御
+        if (nextRoundBtn) nextRoundBtn.style.display = 'block';
+        if (newBattleBtn) newBattleBtn.style.display = 'none';
+    }
+    
+    hideBattleResult() {
+        const battleResult = document.getElementById('battleResult');
+        if (battleResult) battleResult.style.display = 'none';
+    }
+    
+    resetBattleState() {
+        this.currentBattle = null;
+        this.hideMatchingInfo();
+        this.hideOpponentInfo();
+        this.hideHandSelection();
+        this.hideBattleResult();
+        this.updateStatus('対戦待機中', 'WebSocketに接続してマッチングを開始してください');
+    }
+    
+    resetUI() {
+        this.resetBattleState();
+        // 接続状態もリセット
+        this.updateConnectionStatus('disconnected');
+    }
+    
+    getHandEmoji(hand) {
+        const handEmojis = {
+            'rock': '✊',
+            'scissors': '✌️',
+            'paper': '✋'
+        };
+        return handEmojis[hand] || '?';
+    }
+    
+    getResultText(result) {
+        const resultTexts = {
+            'win': '勝ち',
+            'lose': '負け',
+            'draw': '引き分け'
+        };
+        return resultTexts[result] || result;
     }
     
     // =====================
@@ -558,13 +830,11 @@ class JankenBattleClient {
             return;
         }
         
-        if (confirm('対戦を辞退しますか？')) {
-            this.sendMessage('battle_quit', {
-                battleId: this.currentBattle.battleId,
-                userId: this.currentUser.id,
-                reason: 'user_action'
-            });
-        }
+        this.sendMessage('battle_quit', {
+            battleId: this.currentBattle.battleId,
+            userId: this.currentUser.id,
+            reason: 'user_action'
+        });
     }
     
     startNewBattle() {
@@ -594,151 +864,7 @@ class JankenBattleClient {
         }
     }
     
-    // =====================
-    // UI更新メソッド
-    // =====================
-    
-    updateStatus(title, message) {
-        document.getElementById('statusTitle').textContent = title;
-        document.getElementById('statusMessage').textContent = message;
-    }
-    
-    showMatchingInfo() {
-        document.getElementById('matchingInfo').style.display = 'block';
-        document.getElementById('startMatchingBtn').style.display = 'none';
-    }
-    
-    hideMatchingInfo() {
-        document.getElementById('matchingInfo').style.display = 'none';
-        document.getElementById('startMatchingBtn').style.display = 'inline-block';
-    }
-    
-    updateMatchingDisplay(position, waitTime) {
-        document.getElementById('queuePosition').textContent = position;
-        document.getElementById('estimatedWait').textContent = waitTime;
-    }
-    
-    showOpponentInfo(opponent) {
-        document.getElementById('opponentInfo').style.display = 'block';
-        document.getElementById('opponentName').textContent = opponent.nickname;
-        document.getElementById('opponentId').textContent = opponent.userId;
-        document.getElementById('readyBtn').style.display = 'inline-block';
-    }
-    
-    hideOpponentReady() {
-        document.getElementById('readyBtn').style.display = 'none';
-    }
-    
-    updateReadyStatus(status) {
-        // TODO: 準備状況の詳細表示
-    }
-    
-    showHandSelection() {
-        document.getElementById('handSelection').style.display = 'block';
-        this.enableHandSelection();
-    }
-    
-    hideHandSelection() {
-        document.getElementById('handSelection').style.display = 'none';
-    }
-    
-    enableHandSelection() {
-        document.querySelectorAll('.hand-btn').forEach(btn => {
-            btn.classList.remove('disabled', 'selected');
-            btn.disabled = false;
-        });
-        document.getElementById('handStatus').textContent = '手を選択してください';
-    }
-    
-    disableHandSelection() {
-        document.querySelectorAll('.hand-btn').forEach(btn => {
-            btn.classList.add('disabled');
-            btn.disabled = true;
-        });
-        document.getElementById('handStatus').textContent = '相手の手を待っています...';
-    }
-    
-    resetHandSelection() {
-        this.enableHandSelection();
-    }
-    
-    showBattleResult(result) {
-        document.getElementById('battleResult').style.display = 'block';
-        
-        // 手の絵文字マッピング
-        const handEmojis = {
-            rock: '✊',
-            scissors: '✌️',
-            paper: '✋'
-        };
-        
-        // 自分の結果
-        const isPlayer1 = this.currentBattle.playerNumber === 1;
-        const myResult = isPlayer1 ? result.player1 : result.player2;
-        const opResult = isPlayer1 ? result.player2 : result.player1;
-        
-        document.getElementById('yourHand').textContent = handEmojis[myResult.hand];
-        document.getElementById('opponentHand').textContent = handEmojis[opResult.hand];
-        
-        // 結果バッジ
-        const yourResultBadge = document.getElementById('yourResult');
-        const opponentResultBadge = document.getElementById('opponentResult');
-        
-        yourResultBadge.textContent = this.getResultText(myResult.result);
-        yourResultBadge.className = `result-badge ${myResult.result}`;
-        
-        opponentResultBadge.textContent = this.getResultText(opResult.result);
-        opponentResultBadge.className = `result-badge ${opResult.result}`;
-        
-        // タイトル
-        const resultTitle = document.getElementById('resultTitle');
-        if (result.isDraw) {
-            resultTitle.textContent = '引き分け！';
-        } else if (myResult.result === 'win') {
-            resultTitle.textContent = '勝利！';
-        } else {
-            resultTitle.textContent = '敗北...';
-        }
-        
-        // アクションボタン
-        if (result.isFinished) {
-            document.getElementById('newBattleBtn').style.display = 'inline-block';
-            document.getElementById('nextRoundBtn').style.display = 'none';
-        } else {
-            document.getElementById('newBattleBtn').style.display = 'none';
-            document.getElementById('nextRoundBtn').style.display = 'inline-block';
-        }
-    }
-    
-    showDrawResult(result) {
-        this.showBattleResult(result);
-    }
-    
-    hideBattleResult() {
-        document.getElementById('battleResult').style.display = 'none';
-    }
-    
-    getResultText(result) {
-        const texts = {
-            win: '勝利',
-            lose: '敗北',
-            draw: '引き分け'
-        };
-        return texts[result] || result;
-    }
-    
-    resetBattleState() {
-        this.currentBattle = null;
-        this.hideMatchingInfo();
-        document.getElementById('opponentInfo').style.display = 'none';
-        this.hideHandSelection();
-        this.hideBattleResult();
-        this.updateStatus('接続完了', 'マッチング開始ボタンを押して対戦を始めてください');
-    }
-    
-    resetUI() {
-        this.resetBattleState();
-    }
+
     
     // =====================
     // ログ管理
@@ -892,7 +1018,42 @@ class JankenBattleClient {
             this.log('info', `本日のランキング TOP5: ${rankingText}`);
         }
     }
+    
+    // =====================
+    // 環境設定管理
+    // =====================
+    
+    updateApiBaseUrl() {
+        const select = document.getElementById('apiBaseUrl');
+        const customUrlGroup = document.getElementById('customUrlGroup');
+        const currentApiUrl = document.getElementById('currentApiUrl');
+        
+        if (select.value === 'custom') {
+            customUrlGroup.style.display = 'block';
+            const customUrl = document.getElementById('customUrl').value;
+            if (customUrl) {
+                this.config.httpApiBase = customUrl;
+                this.config.apiBase = customUrl.replace('http', 'ws');
+                currentApiUrl.textContent = customUrl;
+            }
+        } else {
+            customUrlGroup.style.display = 'none';
+            this.config.httpApiBase = select.value;
+            this.config.apiBase = select.value.replace('http', 'ws');
+            currentApiUrl.textContent = select.value;
+        }
+        
+        this.log('info', `APIベースURLを更新: ${this.config.httpApiBase}`);
+        this.log('info', `WebSocketベースURL: ${this.config.apiBase}`);
+    }
 }
+
+// グローバル関数として環境設定更新関数を公開
+window.updateApiBaseUrl = function() {
+    if (window.jankenClient) {
+        window.jankenClient.updateApiBaseUrl();
+    }
+};
 
 // アプリケーション初期化
 document.addEventListener('DOMContentLoaded', () => {

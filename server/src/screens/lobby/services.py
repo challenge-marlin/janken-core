@@ -1,9 +1,9 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, desc, select
-from src.shared.database.models import UserStats, User
+from ..shared.database.models import UserStats, User
 from .schemas import UserStatsResponse
-from src.shared.exceptions.handlers import APIException
+from ..shared.exceptions.handlers import APIException
 from datetime import datetime
 
 class LobbyService:

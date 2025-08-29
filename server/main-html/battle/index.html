@@ -3,20 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎮 じゃんけんバトル - テストページ</title>
+    <title>🎮 じゃんけんバトル - WebSocket + Redis対応版</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🎮 じゃんけんバトル</h1>
+            <h1>🎮 じゃんけんバトル - WebSocket + Redis対応版</h1>
             <div style="background: rgba(102, 126, 234, 0.1); padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 14px;">
-                <strong>🆕 Laravel風設計対応:</strong> リアルタイムバトル、統一API、リポジトリパターン
-            </div>
-            <div style="background: rgba(40, 167, 69, 0.1); padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 14px; text-align: center;">
-                <strong>🆕 新機能:</strong> 
-                <a href="db-battle.html" style="color: #28a745; text-decoration: none; font-weight: bold;">DBありき認証・バトルテストページ</a> 
-                - パスワード認証、ユーザープロフィール、統計データの完全DB連携
+                <strong>🆕 WebSocket + Redis対応版:</strong> 安定した接続、オフラインメッセージ、統計管理
             </div>
             <div class="user-info" id="userInfo">
                 <span id="userDisplay">未ログイン</span>
@@ -27,9 +22,38 @@
         <!-- ログイン画面 -->
         <div id="loginSection" class="section">
             <h2>🔐 ログイン</h2>
+            
+            <!-- 環境設定 -->
+            <div class="config-section" style="background: #e3f2fd; border: 1px solid #90caf9; border-radius: 5px; padding: 15px; margin-bottom: 20px;">
+                <h3>🔧 環境設定</h3>
+                <div class="form-group">
+                    <label for="apiBaseUrl">APIベースURL:</label>
+                    <select id="apiBaseUrl">
+                        <option value="http://192.168.0.150">開発環境 (Nginx経由 - 192.168.0.150:80)</option>
+                        <option value="http://192.168.0.150:3000">開発環境 (直接 - 192.168.0.150:3000)</option>
+                        <option value="http://localhost">開発環境 (Nginx経由 - localhost:80)</option>
+                        <option value="http://localhost:3000">開発環境 (直接 - localhost:3000)</option>
+                        <option value="http://192.168.1.180">開発環境 (Nginx経由 - 192.168.1.180:80)</option>
+                        <option value="http://192.168.1.180:3000">開発環境 (直接 - 192.168.1.180:3000)</option>
+                        <option value="http://160.251.137.105">VPS環境</option>
+                        <option value="https://avwnok61nj.execute-api.ap-northeast-3.amazonaws.com/proc">AWS環境</option>
+                        <option value="custom">カスタム</option>
+                    </select>
+                </div>
+                <div class="form-group" id="customUrlGroup" style="display: none;">
+                    <label for="customUrl">カスタムURL:</label>
+                    <input type="text" id="customUrl" placeholder="http://localhost:8000" />
+                </div>
+                <button class="btn btn-success" onclick="updateApiBaseUrl()">設定更新</button>
+                <div style="margin-top: 10px; padding: 8px; background: #fff3cd; border-radius: 3px; font-size: 12px;">
+                    ⚠️ 現在の設定: <span id="currentApiUrl">192.168.0.150</span>
+                </div>
+            </div>
+            
+            <!-- ログインオプション -->
             <div class="login-options">
                 <div class="login-method">
-                    <h3>テストユーザーログイン（Laravel風新API）</h3>
+                    <h3>テストユーザーログイン（WebSocket + Redis対応版）</h3>
                     <div class="dev-login">
                         <select id="devUserSelect">
                             <option value="">テストユーザーを選択</option>
@@ -39,26 +63,14 @@
                             <option value="4">テストユーザー4 (test_user_4)</option>
                             <option value="5">テストユーザー5 (test_user_5)</option>
                         </select>
-                        <button id="devLoginBtn" class="btn btn-primary">新APIでログイン (/test-login)</button>
+                        <button id="devLoginBtn" class="btn btn-primary">WebSocket + Redis対応版でログイン</button>
                     </div>
                     <div style="margin-top: 10px; padding: 8px; background: #e8f5e8; border-radius: 3px; font-size: 12px;">
-                        💡 新機能: UserRepository経由で型安全な認証処理（Laravel風新API /test-login）
-                    </div>
-                    <div style="margin-top: 10px; padding: 8px; background: #fff3cd; border-radius: 3px; font-size: 12px;">
-                        ⚠️ デバッグ情報: ログセクションでAPIレスポンスの詳細を確認してください
+                        💡 WebSocket + Redis対応版で安定した接続、オフラインメッセージ、統計管理
                     </div>
                 </div>
                 
-                <div class="login-method">
-                    <h3>Magic Link認証（Laravel風新API）</h3>
-                    <div class="magic-login">
-                        <input type="email" id="emailInput" placeholder="メールアドレス" value="test@example.com">
-                        <button id="magicLinkBtn" class="btn btn-primary">Magic Link送信 (/request-magic-link)</button>
-                    </div>
-                    <div style="margin-top: 10px; padding: 8px; background: #e3f2fd; border-radius: 3px; font-size: 12px;">
-                        🔗 新機能: 統一エラーハンドリング、CAPTCHA対応、セキュリティ強化
-                    </div>
-                </div>
+
             </div>
         </div>
 
@@ -152,11 +164,9 @@
             
             <!-- 統計・ランキングボタン -->
             <div class="stats-buttons" style="margin-top: 15px; text-align: center;">
-                <button id="loadStatsBtn" class="btn btn-secondary">統計更新 (Laravel風新API)</button>
-                <button id="loadRankingBtn" class="btn btn-secondary">ランキング表示 (Laravel風新API)</button>
-            </div>
-            <div style="margin-top: 10px; padding: 8px; background: #fff3cd; border-radius: 3px; font-size: 12px; text-align: center;">
-                📊 新機能: リポジトリパターンによる統計データ管理、型安全なレスポンス
+                <button id="loadStatsBtn" class="btn btn-secondary">統計更新 (Redis対応版)</button>
+                <button id="loadRankingBtn" class="btn btn-secondary">ランキング表示 (Redis対応版)</button>
+                <button id="getOfflineMessagesBtn" class="btn btn-info">オフラインメッセージ取得</button>
             </div>
         </div>
 

@@ -2,7 +2,7 @@
 
 ## 概要
 このドキュメントは、じゃんけんゲームアプリケーションのAPI仕様を定義します。
-クライアント（Flutter）とサーバー（fastAPI）間の通信インターフェースを明確化し、開発の効率化と品質の向上を図ります。
+クライアント（Flutter）とサーバー（FastAPI）間の通信インターフェースを明確化し、開発の効率化と品質の向上を図ります。
 
 ## API設計方針
 
@@ -26,7 +26,7 @@
 例：
 - `/api/lobby/user-stats/{userId}` - ロビー画面専用のユーザーステータス取得
 - `/api/settings/user-profile/{userId}` - 設定画面専用のユーザープロフィール取得
-- `/api/battle/hand` - バトル画面専用の手送信
+- `/api/battle/ws/{userId}` - バトル画面専用のWebSocket接続
 
 ### WebSocket vs REST API使い分け
 
@@ -54,7 +54,7 @@
 
 2. **新方式（推奨）**: 
    ```
-   WebSocket /ws/battle/{userId} → 即座の状態変化通知
+   WebSocket /api/battle/ws/{userId} → 即座の状態変化通知
    ```
 
 この方針により、各画面の機能が独立し、保守性と安定性を確保します。
@@ -68,30 +68,33 @@
 - レート制限: 環境ごとに設定可能
 
 ### 開発環境（ローカル）
-- ベースURL: `http://192.168.1.180:3000/`
+- ベースURL: `http://192.168.0.150:3000/`
+- WebSocket URL: `ws://192.168.0.150:3000/api/battle/ws/{userId}`
 - 簡易ログインボタンでJWT即時発行可能
 - reCAPTCHAはオプション（環境変数で制御）
 - デバッグ用ヘッダー許可
 - レート制限: なし
-- 通信: HTTP
-- 実装: Express.js
+- 通信: HTTP/WebSocket
+- 実装: FastAPI + WebSocket
 
 ### VPS環境
 - ベースURL: `http://160.251.137.105/`
+- WebSocket URL: `ws://160.251.137.105/api/battle/ws/{userId}`
 - 簡易ログインボタンでJWT即時発行可能
 - reCAPTCHA必須
 - レート制限: 1000req/min
-- 通信: HTTP
-- 実装: Express.js
+- 通信: HTTP/WebSocket
+- 実装: FastAPI + WebSocket
 
 ### AWS環境（予定）
 - ベースURL: `https://avwnok61nj.execute-api.ap-northeast-3.amazonaws.com/proc`
+- WebSocket URL: `wss://avwnok61nj.execute-api.ap-northeast-3.amazonaws.com/proc/api/battle/ws/{userId}`
 - 通常の認証フローのみ（簡易ログイン不可）
 - reCAPTCHA必須
 - APIキー認証追加
 - レート制限: 2000req/min
-- 通信: HTTPS
-- 実装: API Gateway
+- 通信: HTTPS/WSS
+- 実装: API Gateway + Lambda
 
 ## 共通仕様
 
@@ -168,7 +171,7 @@ Pragma: no-cache
 ### 認証API
 
 #### Magic Link認証
-- `POST /auth/request-link` - Magic Linkリクエスト
+- `POST /api/auth/request-link` - Magic Linkリクエスト
   - リクエスト:
     ```json
     {
@@ -191,7 +194,7 @@ Pragma: no-cache
     }
     ```
 
-- `GET /auth/verify` - Magic Linkトークン検証
+- `GET /api/auth/verify` - Magic Linkトークン検証
   - クエリパラメータ:
     - `token`: Magic Linkトークン
   - レスポンス:
@@ -208,7 +211,7 @@ Pragma: no-cache
     ```
 
 #### 開発用簡易認証（開発環境・VPS環境のみ）
-- `POST /auth/dev-login` - 開発用JWT即時発行
+- `POST /api/auth/dev-login` - 開発用JWT即時発行
   - リクエスト:
     ```json
     {
@@ -234,7 +237,7 @@ Pragma: no-cache
 
 ### 基本情報
 - プロトコル: WebSocket (RFC 6455)
-- エンドポイント: `ws://host/ws/{endpoint}`
+- エンドポイント: `/api/battle/ws/{userId}`
 - メッセージ形式: JSON
 - 文字コード: UTF-8
 
@@ -242,7 +245,14 @@ Pragma: no-cache
 
 #### 接続URL形式
 ```
-ws://160.251.137.105/ws/battle/{userId}
+# 開発環境
+ws://192.168.0.150:3000/api/battle/ws/{userId}
+
+# VPS環境
+ws://160.251.137.105/api/battle/ws/{userId}
+
+# AWS環境（予定）
+wss://avwnok61nj.execute-api.ap-northeast-3.amazonaws.com/proc/api/battle/ws/{userId}
 ```
 
 #### 接続ヘッダー
@@ -292,7 +302,9 @@ Authorization: Bearer {jwt_token}  # 認証が必要な場合
      "type": "connection_established",
      "data": {
        "userId": "string",
-       "sessionId": "string"
+       "nickname": "string",
+       "sessionId": "string",
+       "status": "connected"
      },
      "timestamp": "2024-01-01T00:00:00Z",
      "success": true
@@ -311,7 +323,10 @@ Authorization: Bearer {jwt_token}  # 認証が必要な場合
    // サーバーからのpong
    {
      "type": "pong",
-     "data": {},
+     "data": {
+       "userId": "string",
+       "timestamp": "2024-01-01T00:00:00Z"
+     },
      "timestamp": "2024-01-01T00:00:00Z",
      "success": true
    }
@@ -352,7 +367,7 @@ Authorization: Bearer {jwt_token}  # 認証が必要な場合
 
 #### エンドポイント
 ```
-ws://160.251.137.105/ws/battle/{userId}
+/api/battle/ws/{userId}
 ```
 
 #### メッセージタイプ一覧
@@ -369,10 +384,10 @@ ws://160.251.137.105/ws/battle/{userId}
 詳細な仕様は [バトル画面API](battle.md) を参照してください。
 
 ### バトル画面API（画面専用）
-- `GET /battle` - マッチング状態確認（バトル画面専用）
+- `GET /api/battle` - マッチング状態確認（バトル画面専用）
   
   **注意**: このAPIはWebSocket接続が利用できない場合の代替手段として提供されます。
-  通常の運用ではWebSocket API (`ws://host/ws/battle/{userId}`) を使用してください。
+  通常の運用ではWebSocket API (`/api/battle/ws/{userId}`) を使用してください。
   - レスポンス:
     ```json
     {
@@ -388,7 +403,7 @@ ws://160.251.137.105/ws/battle/{userId}
     }
     ```
 
-- `POST /battle` - マッチング開始（バトル画面専用）
+- `POST /api/battle` - マッチング開始（バトル画面専用）
   - リクエスト:
     ```json
     {
@@ -406,7 +421,7 @@ ws://160.251.137.105/ws/battle/{userId}
     }
     ```
 
-- `POST /battle/hand` - 手の送信（バトル画面専用）
+- `POST /api/battle/hand` - 手の送信（バトル画面専用）
   - リクエスト:
     ```json
     {
@@ -426,7 +441,7 @@ ws://160.251.137.105/ws/battle/{userId}
     }
     ```
 
-- `POST /battle/judge` - 結果判定（バトル画面専用）
+- `POST /api/battle/judge` - 結果判定（バトル画面専用）
   - リクエスト:
     ```json
     {
@@ -447,9 +462,9 @@ ws://160.251.137.105/ws/battle/{userId}
     }
     ```
 
-- `POST /battle/ready` - 準備完了（バトル画面専用）
-- `POST /battle/quit` - マッチ辞退（バトル画面専用）
-- `POST /battle/reset_hands` - 手のリセット（バトル画面専用）
+- `POST /api/battle/ready` - 準備完了（バトル画面専用）
+- `POST /api/battle/quit` - マッチ辞退（バトル画面専用）
+- `POST /api/battle/reset_hands` - 手のリセット（バトル画面専用）
 
 ### ロビー画面API
 - `GET /api/lobby/user-stats/{userId}` - ロビー用ユーザーステータス取得（ロビー画面専用）
@@ -662,12 +677,15 @@ ws://160.251.137.105/ws/battle/{userId}
 ```
 VPS環境（本番）:
 - ベースURL: http://160.251.137.105/
+- WebSocket: ws://160.251.137.105/api/battle/ws/{userId}
 
 開発環境（ローカル）:
-- ベースURL: http://192.168.1.180:3000/dev/api
+- ベースURL: http://192.168.0.150:3000/
+- WebSocket: ws://192.168.0.150:3000/api/battle/ws/{userId}
 
 AWS環境（予定）:
 - ベースURL: https://avwnok61nj.execute-api.ap-northeast-3.amazonaws.com/proc
+- WebSocket: wss://avwnok61nj.execute-api.ap-northeast-3.amazonaws.com/proc/api/battle/ws/{userId}
 ```
 
 ### リージョン情報
@@ -679,7 +697,7 @@ AWS環境（予定）:
 - AWS環境への移行時は、API Gatewayのステージ名（proc）は環境によって異なる可能性があります
 - リージョンは必要に応じて変更される可能性があります
 - エンドポイントは環境変数や設定ファイルで管理することを推奨します
-- 本番環境へのデプロイ時は、必ずステージング環境でのテストを実施してください 
+- 本番環境へのデプロイ時は、必ずステージング環境でのテストを実施してください
 
 ## セキュリティと認証の詳細仕様
 
@@ -713,7 +731,7 @@ AWS環境（予定）:
    Authorization: Bearer {jwt_token}
    
    # 開発用認証
-   POST /auth/dev-login
+   POST /api/auth/dev-login
    ```
    - reCAPTCHAオプション
    - 開発用JWT即時発行可能
@@ -724,7 +742,7 @@ AWS環境（予定）:
    Authorization: Bearer {jwt_token}
    
    # 開発用認証
-   POST /auth/dev-login
+   POST /api/auth/dev-login
    ```
    - reCAPTCHA必須
    - 開発用JWT即時発行可能
@@ -1019,7 +1037,7 @@ curl -X POST http://160.251.137.105/api/auth/dev-login \
   -d '{"email": "dev@example.com", "mode": "dev"}'
 
 # WebSocket接続テスト
-wscat -c ws://160.251.137.105/ws/battle/user123
+wscat -c ws://160.251.137.105/api/battle/ws/user123
 ```
 
 ### 環境変数

@@ -72,4 +72,44 @@ db_connection = DatabaseConnection()
 async def get_db_session():
     """データベースセッションの依存性注入"""
     async for session in db_connection.get_session():
-        yield session 
+        yield session
+
+
+# コンテキストマネージャー用の関数
+async def get_db_session_context():
+    """データベースセッションのコンテキストマネージャー"""
+    if not db_connection.async_session_local:
+        raise DatabaseConnectionError("データベース接続が初期化されていません")
+    
+    session = db_connection.async_session_local()
+    try:
+        yield session
+    except Exception as e:
+        await session.rollback()
+        raise e
+    finally:
+        await session.close()
+
+
+# コンテキストマネージャークラス
+class DatabaseSessionContext:
+    """データベースセッションのコンテキストマネージャークラス"""
+    
+    def __init__(self):
+        if not db_connection.async_session_local:
+            raise DatabaseConnectionError("データベース接続が初期化されていません")
+        self.session = db_connection.async_session_local()
+    
+    async def __aenter__(self):
+        return self.session
+    
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            await self.session.rollback()
+        await self.session.close()
+
+
+# コンテキストマネージャー用の関数（クラス版）
+def get_db_session_context_class():
+    """データベースセッションのコンテキストマネージークラスを返す"""
+    return DatabaseSessionContext 

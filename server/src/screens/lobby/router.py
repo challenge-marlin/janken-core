@@ -6,7 +6,7 @@ from .schemas import (
     LobbyErrorResponse
 )
 from .services import LobbyService
-from src.shared.database.connection import get_db_session
+from ..shared.database.connection import get_db_session
 
 router = APIRouter(prefix="/api/lobby", tags=["lobby"])
 
