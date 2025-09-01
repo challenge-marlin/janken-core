@@ -1,8 +1,8 @@
-name: kami_no_te_janken
-description: "神の手じゃんけんクライアントアプリ"
+name: janken_game
+description: "神の手じゃんけんゲーム"
 publish_to: 'none'
-version: 1.0.0+1
 
+version: 1.0.0+1
 
 environment:
   sdk: '>=3.1.3 <4.0.0'
@@ -11,71 +11,45 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.2
-  # アニメーション
-  flutter_animate: ^4.5.0
-  # ローカルストレージ
-  shared_preferences: ^2.5.3
-  # HTTP通信
-  http: ^1.3.0
-  # WebSocket通信
+  provider: ^6.0.5
+  http: ^1.1.0
+  shared_preferences: ^2.2.2
   web_socket_channel: ^2.4.0
-  # ゲームエンジン
-  flame: ^1.10.1
-  flame_audio: ^2.0.5
-  # オーディオ再生
-  audioplayers: ^5.2.1
-  # 画像ピッカー
-  image_picker: ^1.0.7
-  # マークダウン表示
-  flutter_markdown: ^0.6.18
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
-  flutter_launcher_icons: ^0.13.1
-
-flutter_launcher_icons:
-  android: "launcher_icon"
-  ios: true
-  image_path: "assets/images/icon/icon.png"
-  min_sdk_android: 21
-  remove_alpha_ios: true
-  # Adaptive Iconでより大きく表示
-  adaptive_icon_background: "#FFFFFF"  # 白背景
-  adaptive_icon_foreground: "assets/images/icon/icon.png"
+  flutter_lints: ^3.0.0
 
 flutter:
   uses-material-design: true
+  
   assets:
-    - assets/images/backgrounds/background_battle.png
-    - assets/images/backgrounds/background_win.png
-    - assets/images/backgrounds/background_lose.png
-    - assets/images/backgrounds/background_draw.png
-    - assets/images/backgrounds/background_fight.png
-    - assets/images/backgrounds/background_login.png
-    - assets/images/goddess/battle/
-    - assets/images/goddess/lobby/
-    - assets/images/goddess/victory/
-    - assets/images/goddess/defeat/
-    - assets/images/goddess/draw/
-    - assets/images/effects/effect_win.png
-    - assets/images/effects/effect_lose.png
-    - assets/images/effects/effect_draw.png
-    - assets/images/icon/
-    - assets/images/icon/history/
-    - assets/images/logo/
+    - assets/images/
+    - assets/images/backgrounds/
     - assets/images/button/
     - assets/images/default_profiles/
+    - assets/images/effects/
+    - assets/images/goddess/
+    - assets/images/icon/
+    - assets/images/logo/
     - assets/images/rank/
-    - assets/policy/
-    - assets/sounds/Button/button_push.mp3
+    - assets/sounds/
     - assets/sounds/BGM/
+    - assets/sounds/Button/
     - assets/json/
-    - assets/tournament-info/tournament_info.md
+    - assets/policy/
+    - assets/tournament-info/
     - assets/tournament-info/image/
-
+    - assets/fonts/
+  
   fonts:
+    - family: Cinzel
+      fonts:
+        - asset: assets/fonts/Cinzel-VariableFont_wght.ttf
+    - family: KosugiMaru
+      fonts:
+        - asset: assets/fonts/KosugiMaru-Regular.ttf
     - family: M PLUS 1p
       fonts:
         - asset: assets/fonts/MPLUS1p-Regular.ttf

@@ -42,7 +42,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/          # Flutterアプリのlibディレクトリを保護するためコメントアウト
 lib64/
 parts/
 sdist/
@@ -209,6 +209,10 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+
+# Flutter - libディレクトリを明示的に追跡対象にする
+!client/**/lib/
+!client/**/lib/**
 
 # Symbolication related
 app.*.symbols
