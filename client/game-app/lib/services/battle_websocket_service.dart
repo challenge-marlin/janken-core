@@ -214,6 +214,13 @@ class BattleWebSocketService {
     });
   }
 
+  /// マッチングキャンセル
+  void cancelMatching() {
+    _sendMessage('matching_cancel', {
+      'userId': _userId,
+    });
+  }
+
   /// 準備完了
   void setReady(String battleId) {
     _sendMessage('battle_ready', {

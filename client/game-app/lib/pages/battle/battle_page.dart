@@ -4,6 +4,7 @@ import '../../providers/battle_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
 import '../../widgets/common/custom_button.dart';
+import 'package:flutter/foundation.dart'; // kDebugModeを追加
 
 /// バトル画面
 /// 
@@ -101,12 +102,20 @@ class _BattlePageState extends State<BattlePage> {
           return _buildMatchingView(battle);
         }
 
+        // 引き分け結果表示中（最優先で表示）
+        if (battle.isShowingDrawResult && battle.battleResult != null) {
+          print('[DEBUG] 引き分け結果表示画面を表示');
+          return _buildDrawResultView(battle);
+        }
+
         if (battle.isInBattle) {
           return _buildBattleView(battle);
         }
 
-        if (battle.battleResult != null) {
-          return _buildResultView(battle);
+        // 最終結果表示（勝敗が決まった場合）
+        if (battle.battleResult != null && !battle.isDraw) {
+          print('[DEBUG] 最終結果表示画面を表示');
+          return _buildFinalResultView(battle);
         }
 
         return _buildMainView(battle);
@@ -267,6 +276,97 @@ class _BattlePageState extends State<BattlePage> {
             backgroundColor: AppColors.primary,
           ),
           const SizedBox(height: 16),
+          
+          // デバッグ用ボタン（開発時のみ表示）
+          if (kDebugMode) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+                border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    '🧪 デバッグ用テストケース',
+                    style: TextStyle(
+                      fontSize: AppConstants.subtitleFontSize,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.warning,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CustomButton(
+                          text: '引き分けテスト',
+                          onPressed: () => battle.debugSimulateDraw(),
+                          backgroundColor: AppColors.warning,
+                          height: 40,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: CustomButton(
+                          text: '勝利テスト',
+                          onPressed: () => battle.debugSimulateWin(),
+                          backgroundColor: AppColors.success,
+                          height: 40,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CustomButton(
+                          text: '敗北テスト',
+                          onPressed: () => battle.debugSimulateLose(),
+                          backgroundColor: AppColors.error,
+                          height: 40,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: CustomButton(
+                          text: '連続引き分け',
+                          onPressed: () => battle.debugSimulateMultipleDraws(),
+                          backgroundColor: AppColors.info,
+                          height: 40,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CustomButton(
+                          text: '状態ログ',
+                          onPressed: () => battle.debugLogCurrentState(),
+                          backgroundColor: AppColors.surface,
+                          height: 40,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: CustomButton(
+                          text: '状態リセット',
+                          onPressed: () => battle.debugResetState(),
+                          backgroundColor: AppColors.textSecondary,
+                          height: 40,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           
           // 説明
           Container(
@@ -435,14 +535,7 @@ class _BattlePageState extends State<BattlePage> {
           // キャンセルボタン
           CustomButton(
             text: 'マッチングキャンセル',
-            onPressed: () {
-              // TODO: マッチングキャンセル機能を実装
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('マッチングキャンセル機能は準備中です'),
-                ),
-              );
-            },
+            onPressed: () => _showCancelMatchingDialog(battle),
             backgroundColor: AppColors.error,
           ),
         ],
@@ -776,24 +869,210 @@ class _BattlePageState extends State<BattlePage> {
     );
   }
 
-  /// 結果画面を構築
-  Widget _buildResultView(BattleProvider battle) {
+  /// 引き分け結果画面を構築
+  Widget _buildDrawResultView(BattleProvider battle) {
+    if (battle.battleResult == null) return const SizedBox.shrink();
+    
+    final result = battle.battleResult!;
+    final player1 = result['player1'];
+    final player2 = result['player2'];
+    
+    print('[DEBUG] 引き分け結果画面構築: result=$result, drawCount=${battle.drawCount}');
+    
+    return Padding(
+      padding: const EdgeInsets.all(AppConstants.screenPadding),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // 引き分け結果表示
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+              border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.emoji_events,
+                  size: 64,
+                  color: AppColors.warning,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '引き分け！',
+                  style: TextStyle(
+                    fontSize: AppConstants.titleFontSize,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.warning,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '同じ相手と勝負がつくまで続けます',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: AppConstants.bodyFontSize,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '3秒後に次のラウンドに進みます...',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: AppConstants.captionFontSize,
+                    color: AppColors.textSecondary,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // 詳細結果
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'ラウンド結果',
+                  style: TextStyle(
+                    fontSize: AppConstants.subtitleFontSize,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // プレイヤー1の手
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'あなた (P${battle.playerNumber})',
+                      style: TextStyle(
+                        fontSize: AppConstants.bodyFontSize,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      _getHandDisplayName(player1['hand']),
+                      style: TextStyle(
+                        fontSize: AppConstants.bodyFontSize,
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 8),
+                
+                // プレイヤー2の手
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '相手 (P${battle.playerNumber == 1 ? "2" : "1"})',
+                      style: TextStyle(
+                        fontSize: AppConstants.bodyFontSize,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      _getHandDisplayName(player2['hand']),
+                      style: TextStyle(
+                        fontSize: AppConstants.bodyFontSize,
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // 引き分け回数
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+                  ),
+                  child: Text(
+                    '引き分け回数: ${battle.drawCount}回',
+                    style: TextStyle(
+                      fontSize: AppConstants.captionFontSize,
+                      color: AppColors.warning,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // 次のラウンド準備中メッセージ
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.info.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.info.withOpacity(0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.info),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '次のラウンドを準備中...',
+                  style: TextStyle(
+                    fontSize: AppConstants.captionFontSize,
+                    color: AppColors.info,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 最終結果画面を構築（勝敗が決まった場合）
+  Widget _buildFinalResultView(BattleProvider battle) {
     if (battle.battleResult == null) return const SizedBox.shrink();
     
     final result = battle.battleResult!;
     final player1 = result['player1'];
     final player2 = result['player2'];
     final winner = result['winner'];
-    final isDraw = result['isDraw'] ?? false;
     
     // プレイヤー番号から結果を判定
     String resultText;
     Color resultColor;
     
-    if (isDraw) {
-      resultText = '引き分け！';
-      resultColor = AppColors.warning;
-    } else if (winner == battle.playerNumber) {
+    if (winner == battle.playerNumber) {
       resultText = '勝利！';
       resultColor = AppColors.success;
     } else {
@@ -817,7 +1096,7 @@ class _BattlePageState extends State<BattlePage> {
             child: Column(
               children: [
                 Icon(
-                  isDraw ? Icons.emoji_events : (winner == battle.playerNumber ? Icons.emoji_events : Icons.sentiment_dissatisfied),
+                  winner == battle.playerNumber ? Icons.emoji_events : Icons.sentiment_dissatisfied,
                   size: 64,
                   color: resultColor,
                 ),
@@ -900,7 +1179,7 @@ class _BattlePageState extends State<BattlePage> {
                   ],
                 ),
                 
-                if (isDraw) ...[
+                if (battle.drawCount > 0) ...[
                   const SizedBox(height: 8),
                   Text(
                     '引き分け回数: ${battle.drawCount}回',
@@ -933,13 +1212,59 @@ class _BattlePageState extends State<BattlePage> {
               Expanded(
                 child: CustomButton(
                   text: 'ロビーに戻る',
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
+                  onPressed: () => _showReturnToLobbyDialog(battle),
                   backgroundColor: AppColors.surface,
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// マッチングキャンセル確認ダイアログを表示
+  void _showCancelMatchingDialog(BattleProvider battle) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('マッチングキャンセル'),
+        content: const Text('マッチングをキャンセルしますか？\nWebSocket接続も切断されます。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text(AppStrings.cancel),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _cancelMatchingAndDisconnect(battle);
+            },
+            child: const Text(AppStrings.confirm),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ロビーに戻る確認ダイアログを表示
+  void _showReturnToLobbyDialog(BattleProvider battle) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ロビーに戻る'),
+        content: const Text('ロビーに戻りますか？\nWebSocket接続も切断されます。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text(AppStrings.cancel),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _returnToLobbyWithDisconnect(battle);
+            },
+            child: const Text(AppStrings.confirm),
           ),
         ],
       ),
@@ -968,6 +1293,42 @@ class _BattlePageState extends State<BattlePage> {
         ],
       ),
     );
+  }
+
+  /// マッチングキャンセルとWebSocket切断
+  void _cancelMatchingAndDisconnect(BattleProvider battle) {
+    // マッチングキャンセル
+    battle.cancelMatching();
+    
+    // WebSocket接続を切断
+    battle.disconnect();
+    
+    // 成功メッセージを表示
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('マッチングをキャンセルしました'),
+        backgroundColor: AppColors.info,
+      ),
+    );
+    
+    // メイン画面に戻る（接続状態が更新される）
+  }
+
+  /// ロビーに戻る際のWebSocket切断
+  void _returnToLobbyWithDisconnect(BattleProvider battle) {
+    // WebSocket接続を切断
+    battle.disconnect();
+    
+    // 成功メッセージを表示
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('ロビーに戻ります'),
+        backgroundColor: AppColors.info,
+      ),
+    );
+    
+    // ロビー画面に戻る
+    Navigator.of(context).pop();
   }
 
   @override

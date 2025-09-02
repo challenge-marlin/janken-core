@@ -500,6 +500,7 @@ class JankenBattleClient {
     
     onBattleResult(data) {
         this.log('success', '対戦結果受信');
+        this.log('info', 'バトル結果データ:', data);
         this.updateStatus('対戦終了', '結果を確認してください');
         this.showBattleResult(data.result);
         this.hideHandSelection();
@@ -507,6 +508,7 @@ class JankenBattleClient {
     
     onBattleDraw(data) {
         this.log('info', '引き分け！');
+        this.log('info', '引き分けデータ:', data);
         this.updateStatus('引き分け', 'もう一度手を選択してください');
         this.showDrawResult(data.result);
         // 自動で手をリセット
@@ -654,17 +656,41 @@ class JankenBattleClient {
         
         if (battleResult) battleResult.style.display = 'block';
         
+        // デバッグログ追加
+        this.log('info', 'showBattleResult呼び出し - 結果データ:', result);
+        this.log('info', `現在のユーザーID: ${this.currentUser.id}`);
+        
         // 結果表示
+        let isWinner = false;
         if (result.player1 && result.player1.userId === this.currentUser.id) {
+            this.log('info', 'プレイヤー1として処理');
             if (yourHand) yourHand.textContent = this.getHandEmoji(result.player1.hand);
             if (yourResult) yourResult.textContent = this.getResultText(result.player1.result);
             if (opponentHand) opponentHand.textContent = this.getHandEmoji(result.player2.hand);
             if (opponentResult) opponentResult.textContent = this.getResultText(result.player2.result);
+            isWinner = (result.player1.result === 'win');
+            this.log('info', `プレイヤー1結果: ${result.player1.result}, 勝者判定: ${isWinner}`);
         } else {
+            this.log('info', 'プレイヤー2として処理');
             if (yourHand) yourHand.textContent = this.getHandEmoji(result.player2.hand);
             if (yourResult) yourResult.textContent = this.getResultText(result.player2.result);
             if (opponentHand) opponentHand.textContent = this.getHandEmoji(result.player1.hand);
             if (opponentResult) opponentResult.textContent = this.getResultText(result.player1.result);
+            isWinner = (result.player2.result === 'win');
+            this.log('info', `プレイヤー2結果: ${result.player2.result}, 勝者判定: ${isWinner}`);
+        }
+        
+        // 結果タイトルの設定
+        if (resultTitle) {
+            if (isWinner) {
+                resultTitle.textContent = '🎉 勝利！';
+                this.log('info', '結果タイトル設定: 🎉 勝利！');
+            } else {
+                resultTitle.textContent = '😢 敗北...';
+                this.log('info', '結果タイトル設定: 😢 敗北...');
+            }
+        } else {
+            this.log('error', 'resultTitle要素が見つかりません');
         }
         
         // ボタン表示制御

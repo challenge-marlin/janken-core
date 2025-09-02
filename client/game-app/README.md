@@ -70,8 +70,7 @@ lib/
 │   ├── lobby/               # ロビー画面
 │   │   └── lobby_page.dart
 │   ├── battle/              # バトル画面
-│   │   ├── battle_page.dart
-│   │   └── battle_result_page.dart
+│   │   └── battle_page.dart
 │   └── settings/            # 設定画面
 │       └── settings_page.dart
 ├── widgets/                  # 再利用可能ウィジェット
